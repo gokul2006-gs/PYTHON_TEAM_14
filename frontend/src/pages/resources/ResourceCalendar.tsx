@@ -172,7 +172,7 @@ export const ResourceCalendar: React.FC = () => {
                                 <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Submit your session justification</p>
                             </div>
                             <Link
-                                to={`/dashboard/${user?.role.toLowerCase()}/special-booking/${id}`}
+                                to={`/dashboard/${user?.role.toLowerCase().replace('_', '-')}/resources/${id}/special`}
                                 className="text-[10px] font-black uppercase tracking-widest text-primary-600 hover:text-primary-700 bg-primary-50 px-3 py-2 rounded-xl transition-all"
                             >
                                 Special Request?

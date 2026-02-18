@@ -16,7 +16,7 @@ CampusCore is a premium, high-performance web platform designed for modern educa
     - **Staff**: Max **4-hour** sessions for research and extended academic activities.
     - **Bypass Protocol**: Users can initiate a **"Special Request"** for larger events (Symposiums, Exams) which bypasses these temporal caps but necessitates formal Administrative Oversight.
 - **Algorithm-Driven Scheduling**: Intelligent conflict checking that blocks resources globally once a request is approved or pending.
-- **Specialized Request Link**: Every resource calendar now features a **"Special Request?"** gateway for priority session initialization.
+- **Specialized Request Link**: Every resource calendar now features a verified **"Special Request?"** gateway for priority session initialization (Fixed routing sync).
 - **Faculty Consultation (Bridge)**: A unique direct-booking system where students can schedule meetings with staff using only their Employee ID—automatically linking to faculty-assigned consultation spaces.
 - **Auto-Approval Intelligence**: Staff bookings for institutional resources are automatically granted clearance to eliminate administrative latency.
 
