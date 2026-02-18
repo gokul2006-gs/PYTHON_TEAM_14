@@ -103,7 +103,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError({"message": "Account is inactive"})
 
         if user.is_locked():
-            raise serializers.ValidationError({"message": f"Account is locked. Try again later."})
+            raise serializers.ValidationError({"message": "Security Protocol: Account locked due to multiple failed attempts. Please try again in 3 minutes."})
 
         try:
             data = super().validate(attrs)
