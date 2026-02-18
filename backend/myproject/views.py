@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.db import transaction
 from django.db.models import Q
 from .models import User, Resource, Booking, AuditLog, Notification, MeetingSchedule
@@ -131,8 +131,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception as e:
             user.failed_login_attempts += 1
             user.last_failed_login_at = timezone.now()
-            if user.failed_login_attempts >= 5:
-                user.account_locked_until = timezone.now() + timedelta(minutes=10)
+            if user.failed_login_attempts >= 3:
+                user.account_locked_until = timezone.now() + timedelta(minutes=3)
             user.save()
             raise e
 
@@ -179,6 +179,23 @@ class BookingViewSet(viewsets.ModelViewSet):
         if user.status == 'INACTIVE':
             return Response({"error": "Inactive users cannot initiate requests"}, status=403)
             
+        # Duration Validation
+        if start_time and end_time:
+            try:
+                # Handle both HH:MM and HH:MM:SS
+                start_dt = datetime.strptime(start_time[:5], '%H:%M')
+                end_dt = datetime.strptime(end_time[:5], '%H:%M')
+                duration = (end_dt - start_dt).total_seconds() / 3600
+                
+                if user.role == 'STUDENT' and duration > 1:
+                    return Response({"error": "Students are restricted to 60-minute sessions per booking."}, status=400)
+                if user.role == 'STAFF' and duration > 4:
+                    return Response({"error": "Staff sessions are limited to a maximum of 4 hours."}, status=400)
+                if duration <= 0:
+                    return Response({"error": "Invalid temporal range: End time must succeed start time."}, status=400)
+            except ValueError:
+                return Response({"error": "Invalid time format provided."}, status=400)
+
         # Handle Staff ID lookup for meetings
         if staff_id and not resource_id:
             try:
