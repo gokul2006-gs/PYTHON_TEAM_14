@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Clock, User, Filter, Loader2, AlertCircle } from 'lucide-react';
+import { FileText, Clock, User, Filter, Loader2, AlertCircle, Calendar, Eraser } from 'lucide-react';
 import { auditService, type AuditLog } from '../../../services/auditService';
+import { format, isSameDay, parseISO } from 'date-fns';
 
 export const AuditLogs: React.FC = () => {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Filter States
+    const [filterDate, setFilterDate] = useState('');
+    const [filterTimeStart, setFilterTimeStart] = useState('');
+    const [filterTimeEnd, setFilterTimeEnd] = useState('');
 
     const fetchLogs = async () => {
         setIsLoading(true);
@@ -25,43 +31,119 @@ export const AuditLogs: React.FC = () => {
         fetchLogs();
     }, []);
 
+    const clearFilters = () => {
+        setFilterDate('');
+        setFilterTimeStart('');
+        setFilterTimeEnd('');
+    };
+
+    const filteredLogs = logs.filter(log => {
+        const logDate = new Date(log.timestamp);
+
+        // Date Filter
+        if (filterDate && !isSameDay(logDate, new Date(filterDate))) {
+            return false;
+        }
+
+        // Time Filter
+        if (filterTimeStart || filterTimeEnd) {
+            const logTimeStr = format(logDate, 'HH:mm');
+            if (filterTimeStart && logTimeStr < filterTimeStart) return false;
+            if (filterTimeEnd && logTimeStr > filterTimeEnd) return false;
+        }
+
+        return true;
+    });
+
     return (
         <div className="space-y-8 animate-fade-in-up">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between px-1">
                 <div>
                     <h1 className="text-3xl font-black text-college-navy tracking-tight italic">Registry Surveillance</h1>
                     <p className="text-slate-500 font-medium italic mt-1 text-sm sm:text-base">Complete immutable record of all institutional resource operations.</p>
                 </div>
-                <button
-                    onClick={fetchLogs}
-                    className="flex items-center gap-2 rounded-xl border-2 border-slate-100 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:border-slate-200 transition-all shadow-sm"
-                >
-                    <Filter size={14} />
-                    Refresh Stream
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={clearFilters}
+                        className="flex items-center gap-2 rounded-xl border-2 border-slate-100 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-rose-500 transition-all shadow-sm"
+                    >
+                        <Eraser size={14} />
+                        Clear
+                    </button>
+                    <button
+                        onClick={fetchLogs}
+                        className="flex items-center gap-2 rounded-xl border-2 border-primary-100 bg-primary-50 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-primary-600 hover:bg-primary-100 transition-all shadow-sm"
+                    >
+                        <Filter size={14} />
+                        Refresh
+                    </button>
+                </div>
             </div>
 
-            <div className="rounded-[2.5rem] border border-slate-100 bg-white shadow-sm overflow-hidden">
+            {/* Premium Filter Panel */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white/50 backdrop-blur-md p-6 rounded-[2rem] border border-slate-200/60 shadow-sm">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Operation Date</label>
+                    <div className="relative">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="date"
+                            value={filterDate}
+                            onChange={(e) => setFilterDate(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-college-navy focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Start Threshold</label>
+                    <div className="relative">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="time"
+                            value={filterTimeStart}
+                            onChange={(e) => setFilterTimeStart(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-college-navy focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">End Threshold</label>
+                    <div className="relative">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="time"
+                            value={filterTimeEnd}
+                            onChange={(e) => setFilterTimeEnd(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm font-bold text-college-navy focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-[2.5rem] border border-slate-100 bg-white shadow-sm overflow-hidden min-h-[400px]">
                 <div className="flow-root">
                     {isLoading ? (
-                        <div className="py-24 flex flex-col items-center justify-center">
+                        <div className="py-32 flex flex-col items-center justify-center">
                             <Loader2 className="h-12 w-12 animate-spin text-primary-600 mb-4" />
                             <p className="text-slate-400 font-bold italic uppercase tracking-widest text-xs">Decrypting Audit Stream...</p>
                         </div>
                     ) : error ? (
-                        <div className="py-24 text-center">
+                        <div className="py-32 text-center">
                             <AlertCircle className="mx-auto h-12 w-12 text-rose-500 mb-4" />
                             <p className="text-rose-600 font-bold">{error}</p>
                             <button onClick={fetchLogs} className="mt-4 text-sm font-black text-primary-600 uppercase hover:underline">Retry Connection</button>
                         </div>
-                    ) : logs.length === 0 ? (
-                        <div className="py-24 text-center">
-                            <FileText className="mx-auto h-12 w-12 text-slate-200 mb-4" />
-                            <p className="text-slate-400 font-bold italic uppercase tracking-widest text-xs">No entries recorded in current epoch.</p>
+                    ) : filteredLogs.length === 0 ? (
+                        <div className="py-32 text-center">
+                            <div className="h-20 w-20 rounded-[2rem] bg-slate-50 text-slate-200 flex items-center justify-center mx-auto mb-6">
+                                <FileText size={40} />
+                            </div>
+                            <h3 className="text-xl font-black text-college-navy italic">No Matching Records</h3>
+                            <p className="text-slate-400 font-bold italic uppercase tracking-widest text-[10px] mt-2">No entries found for the selected time horizon.</p>
                         </div>
                     ) : (
                         <ul role="list" className="divide-y divide-slate-50">
-                            {logs.map((log) => (
+                            {filteredLogs.map((log) => (
                                 <li key={log.id} className="p-6 transition-all hover:bg-slate-50/50 group">
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                                         <div className="flex-shrink-0">
@@ -86,7 +168,7 @@ export const AuditLogs: React.FC = () => {
                                                 <span className="h-1 w-1 rounded-full bg-slate-200" />
                                                 <span className="flex items-center gap-1.5">
                                                     <Clock size={12} className="opacity-50" />
-                                                    {new Date(log.timestamp).toLocaleString()}
+                                                    {format(parseISO(log.timestamp), 'MMM d, yyyy • HH:mm:ss')}
                                                 </span>
                                             </div>
                                         </div>
@@ -108,4 +190,5 @@ export const AuditLogs: React.FC = () => {
         </div>
     );
 };
+
 
