@@ -32,12 +32,13 @@ export const SpecialBooking: React.FC = () => {
         setIsSubmitting(true);
         setError(null);
         try {
-            // We prepend [SPECIAL] to purpose or use a specific endpoint
             await bookingService.create({
-                resourceId: id,
-                startTime: `${data.date}T${data.startTime}:00`,
-                endTime: `${data.date}T${data.endTime}:00`,
-                purpose: `[SPECIAL: ${data.eventType}] ${data.justification} (Attendees: ${data.attendees})`
+                resource: parseInt(id),
+                booking_date: data.date,
+                start_time: `${data.startTime}:00`,
+                end_time: `${data.endTime}:00`,
+                booking_type: 'SPECIAL',
+                justification: `[EVENT: ${data.eventType}] ${data.justification} (Attendees: ${data.attendees})`
             });
             navigate(`/dashboard/${role}/resources/${id}`);
         } catch (err: any) {
@@ -48,118 +49,132 @@ export const SpecialBooking: React.FC = () => {
     };
 
     return (
-        <div className="mx-auto max-w-2xl space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="mx-auto max-w-2xl space-y-8 animate-fade-in-up">
+            <div className="flex items-center gap-6 px-1">
                 <button
                     onClick={() => navigate(-1)}
-                    className="rounded-full p-2 hover:bg-slate-100"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-college-navy hover:shadow-lg transition-all"
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-2xl font-bold text-slate-900">Special Booking Request</h1>
+                <div>
+                    <h1 className="text-3xl font-black text-college-navy tracking-tight italic">Priority Protocol</h1>
+                    <p className="text-slate-500 font-medium italic mt-1">Special resource allocation for institutional events.</p>
+                </div>
             </div>
 
-            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-                <div className="flex gap-3">
-                    <ShieldAlert className="h-6 w-6 shrink-0 text-yellow-600" />
+            <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/50 p-6 sm:p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <ShieldAlert size={120} className="text-amber-600" />
+                </div>
+                <div className="flex gap-4 relative z-10">
+                    <div className="h-10 w-10 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                        <ShieldAlert size={20} />
+                    </div>
                     <div>
-                        <h3 className="font-semibold text-yellow-800">Admin Approval Required</h3>
-                        <p className="text-sm text-yellow-700">
-                            Special booking requests bypass standard slot limits but require strict administrative approval.
-                            Please provide detailed justification.
+                        <h3 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1">Authorization Guard</h3>
+                        <p className="text-sm font-medium text-amber-800 leading-relaxed italic">
+                            Priority requests bypass standard algorithmic constraints but require formal validation from the administrative oversight committee.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="rounded-[3rem] border border-slate-100 bg-white p-8 sm:p-10 shadow-sm relative overflow-hidden">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                     {error && (
-                        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+                        <div className="rounded-2xl bg-rose-50 p-4 border border-rose-100 text-xs font-bold text-rose-700 uppercase tracking-widest">
                             {error}
                         </div>
                     )}
 
-                    <div className="grid gap-6 md:grid-cols-2">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Event Type</label>
+                    <div className="grid gap-8 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Session Nature</label>
                             <input
                                 type="text"
                                 {...register('eventType')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="e.g. Workshop, Guest Lecture"
+                                className="block w-full rounded-2xl border-2 border-slate-50 bg-slate-50/30 py-4 px-5 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:bg-white outline-none transition-all shadow-inner"
+                                placeholder="e.g. Research Symposium"
                             />
-                            {errors.eventType && <p className="text-xs text-red-600">{errors.eventType.message}</p>}
+                            {errors.eventType && <p className="text-[10px] font-bold text-rose-600 px-2 uppercase tracking-wide">{errors.eventType.message}</p>}
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Expected Attendees</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Headcount Proj.</label>
                             <input
                                 type="number"
                                 {...register('attendees', { valueAsNumber: true })}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="block w-full rounded-2xl border-2 border-slate-50 bg-slate-50/30 py-4 px-5 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:bg-white outline-none transition-all shadow-inner"
+                                placeholder="50"
                             />
-                            {errors.attendees && <p className="text-xs text-red-600">{errors.attendees.message}</p>}
+                            {errors.attendees && <p className="text-[10px] font-bold text-rose-600 px-2 uppercase tracking-wide">{errors.attendees.message}</p>}
                         </div>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-3">
-                        <div className="md:col-span-1">
-                            <label className="block text-sm font-medium text-slate-700">Date</label>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Target Date</label>
                             <input
                                 type="date"
                                 {...register('date')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="block w-full rounded-2xl border-2 border-slate-50 bg-slate-50/30 py-4 px-4 text-sm font-bold text-college-navy focus:border-primary-500 focus:bg-white outline-none transition-all"
                             />
-                            {errors.date && <p className="text-xs text-red-600">{errors.date.message}</p>}
+                            {errors.date && <p className="text-[10px] font-bold text-rose-600 px-2 italic">{errors.date.message}</p>}
                         </div>
 
-                        <div className="md:col-span-1">
-                            <label className="block text-sm font-medium text-slate-700">Start Time</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Synchronize (In)</label>
                             <input
                                 type="time"
                                 {...register('startTime')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="block w-full rounded-2xl border-2 border-slate-50 bg-slate-50/30 py-4 px-4 text-sm font-bold text-college-navy focus:border-primary-500 focus:bg-white outline-none transition-all"
                             />
-                            {errors.startTime && <p className="text-xs text-red-600">{errors.startTime.message}</p>}
+                            {errors.startTime && <p className="text-[10px] font-bold text-rose-600 px-2 italic">{errors.startTime.message}</p>}
                         </div>
 
-                        <div className="md:col-span-1">
-                            <label className="block text-sm font-medium text-slate-700">End Time</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Synchronize (Out)</label>
                             <input
                                 type="time"
                                 {...register('endTime')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className="block w-full rounded-2xl border-2 border-slate-50 bg-slate-50/30 py-4 px-4 text-sm font-bold text-college-navy focus:border-primary-500 focus:bg-white outline-none transition-all"
                             />
-                            {errors.endTime && <p className="text-xs text-red-600">{errors.endTime.message}</p>}
+                            {errors.endTime && <p className="text-[10px] font-bold text-rose-600 px-2 italic">{errors.endTime.message}</p>}
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700">Justification</label>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Case Justification</label>
                         <textarea
                             rows={5}
                             {...register('justification')}
-                            className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="Please explain why this booking is necessary and why it requires special consideration..."
+                            className="block w-full rounded-[2rem] border-2 border-slate-50 bg-slate-50/30 py-5 px-6 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:bg-white outline-none transition-all shadow-inner resize-none"
+                            placeholder="Provide exhaustive reasoning for priority resource bypass..."
                         />
-                        {errors.justification && <p className="text-xs text-red-600">{errors.justification.message}</p>}
+                        {errors.justification && <p className="text-[10px] font-bold text-rose-600 px-2 uppercase tracking-wide">{errors.justification.message}</p>}
                     </div>
 
-                    <div className="flex justify-end gap-3">
+                    <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4 border-t border-slate-50">
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
-                            className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                            className="rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all"
                         >
-                            Cancel
+                            Abort Request
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex items-center justify-center rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-70"
+                            className="btn-premium flex items-center justify-center gap-2 px-10 py-4 shadow-xl shadow-college-navy/20"
                         >
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Special Request'}
+                            {isSubmitting ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    Initialize Priority Protocol
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>

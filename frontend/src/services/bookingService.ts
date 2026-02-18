@@ -1,22 +1,29 @@
 import api from '../lib/axios';
-import type { Resource } from './resourceService';
 
 export interface Booking {
-    id: string;
-    resourceId: string;
-    userId: string;
-    startTime: string; // ISO String
-    endTime: string;
-    status: 'pending' | 'approved' | 'rejected';
-    purpose: string;
-    resource?: Resource; // Joined details
+    id: number;
+    user: number;
+    user_name: string;
+    resource: number;
+    resource_name: string;
+    booking_date: string; // YYYY-MM-DD
+    start_time: string; // HH:MM:SS
+    end_time: string; // HH:MM:SS
+    booking_type: 'NORMAL' | 'SPECIAL' | 'MEETING';
+    justification?: string;
+    remarks?: string;
+    priority_level: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    created_at: string;
 }
 
 export interface BookingRequest {
-    resourceId: string;
-    startTime: string;
-    endTime: string;
-    purpose: string;
+    resource: number;
+    booking_date: string;
+    start_time: string;
+    end_time: string;
+    booking_type?: 'NORMAL' | 'SPECIAL' | 'MEETING';
+    justification?: string;
 }
 
 export const bookingService = {
@@ -25,10 +32,10 @@ export const bookingService = {
     },
 
     getMyBookings: async (): Promise<Booking[]> => {
-        return (await api.get<Booking[]>('/bookings/my/')).data;
+        return (await api.get<Booking[]>('/bookings/')).data; // The viewset filters by user automatically
     },
 
-    checkAvailability: async (resourceId: string, date: string): Promise<{ start: string, end: string }[]> => {
-        return (await api.get<{ start: string, end: string }[]>(`/bookings/availability/?resourceId=${resourceId}&date=${date}`)).data;
+    checkAvailability: async (resourceId: number, date: string): Promise<{ start_time: string, end_time: string }[]> => {
+        return (await api.get<{ start_time: string, end_time: string }[]>(`/bookings/availability/?resource=${resourceId}&date=${date}`)).data;
     }
 };

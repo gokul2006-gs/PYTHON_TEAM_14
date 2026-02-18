@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { approvalService, type PendingRequest } from '../../../services/approvalService';
-import { Loader2, CheckCircle, XCircle, AlertCircle, Clock, Calendar, User } from 'lucide-react';
+import { approvalService } from '../../../services/approvalService';
+import type { Booking } from '../../../services/bookingService';
+import { Loader2, CheckCircle, XCircle, Clock, Calendar, User, ShieldCheck, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export const ApprovalPanel: React.FC = () => {
-    const [requests, setRequests] = useState<PendingRequest[]>([]);
+    const [requests, setRequests] = useState<Booking[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [processingId, setProcessingId] = useState<string | null>(null);
+    const [processingId, setProcessingId] = useState<number | null>(null);
 
     const fetchRequests = async () => {
         try {
@@ -23,15 +24,14 @@ export const ApprovalPanel: React.FC = () => {
         fetchRequests();
     }, []);
 
-    const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    const handleAction = async (id: number, action: 'approve' | 'reject') => {
         setProcessingId(id);
         try {
             if (action === 'approve') {
                 await approvalService.approve(id);
             } else {
-                await approvalService.reject(id, 'Rejected by admin/faculty'); // In real app, prompt for comment
+                await approvalService.reject(id, 'Rejected by authority');
             }
-            // Remove from list
             setRequests(prev => prev.filter(r => r.id !== id));
         } catch (error) {
             console.error(`Failed to ${action}`, error);
@@ -40,77 +40,119 @@ export const ApprovalPanel: React.FC = () => {
         }
     };
 
-    if (isLoading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (isLoading) {
+        return (
+            <div className="flex h-96 items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary-600" />
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-slate-900">Pending Approvals</h1>
+        <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+                <div className="text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl font-black text-college-navy tracking-tight italic">Security & Approvals</h1>
+                    <p className="text-slate-500 font-medium italic mt-1 text-sm sm:text-base">Review and manage pending resource access requests.</p>
+                </div>
+                <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 shadow-lg shadow-primary-500/10">
+                    <ShieldCheck size={28} />
+                </div>
+            </div>
 
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:gap-6">
                 {requests.length > 0 ? (
                     requests.map((request) => (
                         <div
                             key={request.id}
-                            className={`rounded-xl border bg-white p-6 shadow-sm transition-all ${request.type === 'special' ? 'border-yellow-200 ring-1 ring-yellow-100' : 'border-slate-200'
+                            className={`group overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-white bg-white shadow-sm transition-all duration-500 hover:shadow-2xl hover:shadow-primary-500/5 ${request.booking_type === 'SPECIAL' ? 'border-l-8 border-l-college-gold' : 'border-l-8 border-l-primary-500'
                                 }`}
                         >
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ${request.type === 'special' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                            <div className="flex flex-col lg:flex-row items-stretch">
+                                <div className="flex-1 p-6 sm:p-8">
+                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
+                                        <span className={`rounded-full px-3 sm:px-4 py-1.5 text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${request.booking_type === 'SPECIAL' ? 'bg-college-gold/10 text-college-gold' : 'bg-primary-50 text-primary-600'
                                             }`}>
-                                            {request.type} Request
+                                            {request.booking_type} Access
                                         </span>
-                                        <h3 className="font-semibold text-slate-900">{request.resourceName}</h3>
+                                        <div className="h-1.5 w-1.5 rounded-full bg-slate-200" />
+                                        <h3 className="text-lg sm:text-xl font-bold text-college-navy italic leading-snug">{request.resource_name}</h3>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                                        <div className="flex items-center gap-2">
-                                            <User size={16} />
-                                            {request.userName} <span className="text-xs text-slate-400">({request.userRole})</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                                                <User size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Requester</div>
+                                                <div className="text-sm font-bold text-college-navy truncate">{request.user_name}</div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar size={16} />
-                                            {request.date}
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                                                <Calendar size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Date</div>
+                                                <div className="text-sm font-bold text-college-navy truncate">
+                                                    {format(parseISO(request.booking_date), 'MMM d')}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Clock size={16} />
-                                            {request.startTime} - {request.endTime}
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                                                <Clock size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Duration</div>
+                                                <div className="text-sm font-bold text-college-navy truncate">
+                                                    {request.start_time.substring(0, 5)}—{request.end_time.substring(0, 5)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">
-                                        <span className="font-medium">Justification: </span>
-                                        {request.purpose}
-                                    </div>
+                                    {request.justification && (
+                                        <div className="relative rounded-[1.25rem] sm:rounded-[1.5rem] bg-slate-50 p-5 sm:p-6 border border-slate-100 italic text-slate-600 text-sm">
+                                            <AlertCircle size={14} className="absolute top-5 left-5 text-slate-300 hidden xs:block" />
+                                            <div className="xs:pl-6 sm:pl-8">
+                                                <span className="font-black text-slate-400 uppercase tracking-widest text-[9px] sm:text-[10px] block mb-1">Statement of Need</span>
+                                                <span className="leading-relaxed">"{request.justification}"</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="flex gap-3 lg:flex-col">
+                                <div className="bg-slate-50/50 border-t lg:border-t-0 lg:border-l border-slate-100 p-6 sm:p-8 flex flex-row lg:flex-col justify-center gap-3 sm:gap-4 lg:min-w-[220px]">
                                     <button
                                         onClick={() => handleAction(request.id, 'approve')}
                                         disabled={!!processingId}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 lg:w-32"
+                                        className="btn-premium flex-1 sm:flex-none flex items-center justify-center gap-2 !bg-emerald-600 shadow-emerald-500/20 text-xs sm:text-sm py-3 lg:py-4 px-2 sm:px-4"
                                     >
-                                        {processingId === request.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                                        Approve
+                                        {processingId === request.id ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                        <span className="hidden xs:inline">Verify &</span> Approve
                                     </button>
                                     <button
                                         onClick={() => handleAction(request.id, 'reject')}
                                         disabled={!!processingId}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-50 px-4 py-2 text-center text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 lg:w-32"
+                                        className="btn-premium-outline flex-1 sm:flex-none flex items-center justify-center gap-2 !border-red-500 !text-red-600 hover:!bg-red-500 hover:!text-white text-xs sm:text-sm py-3 lg:py-4 px-2 sm:px-4"
                                     >
                                         <XCircle size={16} />
-                                        Reject
+                                        Deny <span className="hidden xs:inline">Access</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 py-16">
-                        <CheckCircle className="mb-4 h-12 w-12 text-slate-300" />
-                        <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
-                        <p className="text-slate-500">No pending requests at the moment.</p>
+                    <div className="flex flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-slate-200 py-32 bg-white/50 backdrop-blur-sm">
+                        <div className="h-24 w-24 rounded-[2rem] bg-emerald-50 text-emerald-500 flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/10">
+                            <CheckCircle size={48} />
+                        </div>
+                        <h3 className="text-2xl font-black text-college-navy italic">Security Clearance Clean</h3>
+                        <p className="text-slate-500 font-medium">No pending unauthorized access requests found in the system.</p>
                     </div>
                 )}
             </div>

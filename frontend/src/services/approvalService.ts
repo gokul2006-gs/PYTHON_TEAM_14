@@ -1,28 +1,17 @@
 import api from '../lib/axios';
-
-export interface PendingRequest {
-    id: string;
-    resourceName: string;
-    userName: string;
-    userRole: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    purpose: string;
-    status: 'pending';
-    type: 'standard' | 'special';
-}
+import type { Booking } from './bookingService';
 
 export const approvalService = {
-    getPendingRequests: async (): Promise<PendingRequest[]> => {
-        return (await api.get<PendingRequest[]>('/approvals/pending/')).data;
+    getPendingRequests: async (): Promise<Booking[]> => {
+        const response = await api.get<Booking[]>('/bookings/');
+        return response.data.filter(b => b.status === 'PENDING');
     },
 
-    approve: async (id: string, comment?: string): Promise<void> => {
-        await api.post(`/approvals/${id}/approve/`, { comment });
+    approve: async (id: number, remarks?: string): Promise<void> => {
+        await api.post(`/bookings/${id}/approve/`, { remarks });
     },
 
-    reject: async (id: string, comment?: string): Promise<void> => {
-        await api.post(`/approvals/${id}/reject/`, { comment });
+    reject: async (id: number, remarks: string): Promise<void> => {
+        await api.post(`/bookings/${id}/reject/`, { remarks });
     }
 };

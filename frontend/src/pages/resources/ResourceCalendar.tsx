@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { format, addDays, startOfToday, parseISO, isSameDay } from 'date-fns';
+import { useParams } from 'react-router-dom';
+import { format, addDays, startOfToday } from 'date-fns';
 import { resourceService, type Resource } from '../../services/resourceService';
 import { bookingService } from '../../services/bookingService';
-import { Loader2, ChevronLeft, ChevronRight, Clock, Info } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Clock, Info, ShieldCheck, MapPin, Users, CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-// Validation Schema for Booking
 const bookingSchema = z.object({
-    purpose: z.string().min(10, 'Purpose must be detailed (at least 10 chars)'),
+    justification: z.string().min(10, 'Justification must be detailed (at least 10 chars)'),
     startTime: z.string().min(1, 'Start time is required'),
     endTime: z.string().min(1, 'End time is required'),
 });
@@ -19,10 +18,10 @@ type BookingFormData = z.infer<typeof bookingSchema>;
 
 export const ResourceCalendar: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const [resource, setResource] = useState<Resource | null>(null);
     const [selectedDate, setSelectedDate] = useState(startOfToday());
-    const [availability, setAvailability] = useState<{ start: string; end: string }[]>([]);
+    const [availability, setAvailability] = useState<{ start_time: string; end_time: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
@@ -37,7 +36,7 @@ export const ResourceCalendar: React.FC = () => {
             try {
                 const [res, avail] = await Promise.all([
                     resourceService.getById(id),
-                    bookingService.checkAvailability(id, format(selectedDate, 'yyyy-MM-dd'))
+                    bookingService.checkAvailability(parseInt(id), format(selectedDate, 'yyyy-MM-dd'))
                 ]);
                 setResource(res);
                 setAvailability(avail);
@@ -51,151 +50,189 @@ export const ResourceCalendar: React.FC = () => {
     }, [id, selectedDate]);
 
     const onSubmit = async (data: BookingFormData) => {
-        if (!id) return;
+        if (!id || !resource) return;
         setIsSubmitting(true);
         setMessage(null);
         try {
+            const isMeeting = resource.type === 'MEETING_ROOM';
             await bookingService.create({
-                resourceId: id,
-                startTime: `${format(selectedDate, 'yyyy-MM-dd')}T${data.startTime}:00`,
-                endTime: `${format(selectedDate, 'yyyy-MM-dd')}T${data.endTime}:00`,
-                purpose: data.purpose
+                resource: parseInt(id),
+                booking_date: format(selectedDate, 'yyyy-MM-dd'),
+                start_time: `${data.startTime}:00`,
+                end_time: `${data.endTime}:00`,
+                justification: data.justification,
+                booking_type: isMeeting ? 'MEETING' : 'NORMAL'
             });
-            setMessage({ type: 'success', text: 'Booking request submitted successfully! Pending approval.' });
+            setMessage({ type: 'success', text: 'Secure access request dispatched. Pending faculty review.' });
             reset();
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to submit booking.' });
+            setMessage({ type: 'error', text: error.response?.data?.error || error.response?.data?.message || 'Authorization request failed.' });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (isLoading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin" /></div>;
-    if (!resource) return <div>Resource not found</div>;
+    if (isLoading) return <div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin text-primary-600" /></div>;
+    if (!resource) return <div className="p-20 text-center font-bold italic text-slate-400">Resource Protocol Error: Not Found</div>;
 
     return (
-        <div className="grid gap-8 lg:grid-cols-3">
-            {/* Left: Resource Info & Calendar */}
-            <div className="space-y-6 lg:col-span-2">
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h1 className="text-2xl font-bold text-slate-900">{resource.name}</h1>
-                    <p className="text-slate-600">{resource.location} • Capacity: {resource.capacity}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                        <button
-                            onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                            className="rounded-full p-2 hover:bg-slate-100"
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-                        <h2 className="text-lg font-semibold">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</h2>
-                        <button
-                            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                            className="rounded-full p-2 hover:bg-slate-100"
-                        >
-                            <ChevronRight size={20} />
-                        </button>
-                    </div>
-                </div>
+        <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
+            {/* Header: Resource Identity */}
+            <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] bg-college-navy p-6 sm:p-10 text-white shadow-2xl">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
 
-                {/* Availability Visualization (Simple List for MVP) */}
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 font-semibold text-slate-900">Occupied Slots</h3>
-                    {availability.length > 0 ? (
-                        <div className="space-y-2">
-                            {availability.map((slot, idx) => (
-                                <div key={idx} className="flex items-center gap-3 rounded-md bg-red-50 p-3 text-red-700">
-                                    <Clock size={16} />
-                                    <span>{slot.start} - {slot.end}</span>
-                                    <span className="ml-auto text-xs font-bold uppercase tracking-wider text-red-600">Booked</span>
-                                </div>
-                            ))}
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 sm:gap-8">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center text-college-gold border border-white/20 shadow-inner">
+                            {resource?.type === 'LAB' ? <ShieldCheck size={32} /> : <MapPin size={32} />}
                         </div>
-                    ) : (
-                        <div className="rounded-md bg-green-50 p-4 text-green-700">
-                            All slots available for this day.
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-black italic tracking-tight uppercase">
+                                {isLoading ? 'Acquiring Resource...' : resource?.name}
+                            </h1>
+                            <div className="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 overflow-hidden">
+                                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary-300">
+                                    <Info size={12} /> {resource?.type} Control
+                                </span>
+                                <span className="h-1 w-1 rounded-full bg-white/20 hidden sm:block" />
+                                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                                    <Users size={12} /> Max Capacity: {resource?.capacity || 'N/A'}
+                                </span>
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 
-            {/* Right: Booking Form */}
-            <div className="lg:col-span-1">
-                <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-slate-900">Book This Resource</h3>
-
-                    {message && (
-                        <div className={`mb-4 rounded-md p-3 text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                            {message.text}
+            <div className="grid gap-6 sm:gap-8 lg:grid-cols-2 lg:items-start">
+                {/* Left Side: Calendar Orchestrator */}
+                <div className="rounded-[2rem] sm:rounded-[3rem] border border-slate-100 bg-white p-6 sm:p-10 shadow-sm">
+                    <div className="mb-6 sm:mb-8 flex items-center justify-between">
+                        <h2 className="text-xl sm:text-2xl font-black text-college-navy italic leading-none">Date Selection</h2>
+                        <div className="flex gap-2">
+                            <button onClick={() => setSelectedDate(addDays(selectedDate, -1))} className="p-2 sm:p-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-primary-50 hover:text-primary-600 transition-all">
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button onClick={() => setSelectedDate(addDays(selectedDate, 1))} className="p-2 sm:p-3 rounded-xl bg-slate-50 text-slate-400 hover:bg-primary-50 hover:text-primary-600 transition-all">
+                                <ChevronRight size={18} />
+                            </button>
                         </div>
-                    )}
+                    </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Start Time</label>
-                            <input
-                                type="time"
-                                {...register('startTime')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                            {errors.startTime && <p className="text-xs text-red-600">{errors.startTime.message}</p>}
-                        </div>
+                    <div className="mb-8 grid grid-cols-7 gap-2 sm:gap-4">
+                        {Array.from({ length: 7 }).map((_, i) => {
+                            const date = addDays(startOfToday(), i);
+                            const isActive = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => setSelectedDate(date)}
+                                    className={`flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl py-3 sm:py-5 transition-all ${isActive ? 'bg-college-navy text-white shadow-xl shadow-college-navy/20 scale-105' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest mb-1 sm:mb-2">{format(date, 'EEE')}</span>
+                                    <span className="text-base sm:text-xl font-black">{format(date, 'd')}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">End Time</label>
-                            <input
-                                type="time"
-                                {...register('endTime')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                            {errors.endTime && <p className="text-xs text-red-600">{errors.endTime.message}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">Purpose</label>
-                            <textarea
-                                rows={3}
-                                {...register('purpose')}
-                                className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="Class, Project work, Event..."
-                            />
-                            {errors.purpose && <p className="text-xs text-red-600">{errors.purpose.message}</p>}
-                        </div>
-
-                        <div className="rounded-md bg-blue-50 p-3 text-xs text-blue-700">
-                            <div className="flex gap-2">
-                                <Info size={16} className="shrink-0" />
-                                <p>Requests are subject to approval. Admin has conflict override authority.</p>
+                    <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Live Availability Index</h3>
+                        {availability.length === 0 ? (
+                            <div className="rounded-2xl bg-emerald-50/50 p-4 sm:p-6 border border-emerald-100 flex items-center gap-4">
+                                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <p className="text-xs sm:text-sm font-bold text-emerald-700 italic">This slot is currently uncontested. Full availability granted.</p>
                             </div>
-                        </div>
+                        ) : (
+                            availability.map((slot, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <Clock size={16} className="text-rose-400" />
+                                        <span className="text-xs sm:text-sm font-bold text-slate-600">{slot.start_time} - {slot.end_time}</span>
+                                    </div>
+                                    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-2 py-1 rounded-md">Occupied</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
 
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-70"
-                        >
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Request'}
-                        </button>
-                    </form>
+                {/* Right Side: Booking Form */}
+                <div className="rounded-[2rem] sm:rounded-[3rem] border border-slate-100 bg-white p-6 sm:p-10 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 h-32 w-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50" />
 
-                    <div className="mt-6 border-t border-slate-100 pt-6 text-center">
-                        <p className="text-sm text-slate-500">Need to organize a seminar or special event?</p>
-                        <button
-                            // Use a relative path or construct it safely. 
-                            // Example: /dashboard/student/resources/1/special
-                            // We need the role.
-                            onClick={() => {
-                                const pathParts = window.location.pathname.split('/');
-                                // pathParts = ['', 'dashboard', 'student', 'resources', '1']
-                                const role = pathParts[2];
-                                navigate(`/dashboard/${role}/resources/${id}/special`);
-                            }}
-                            className="mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
-                        >
-                            Request Special Booking
-                        </button>
+                    <div className="relative z-10">
+                        <h2 className="text-xl sm:text-2xl font-black text-college-navy italic mb-2">Protocol Request</h2>
+                        <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-6 sm:mb-8">Submit your session justification</p>
+
+                        {message && (
+                            <div className={`mb-6 sm:mb-8 rounded-2xl p-4 text-[10px] sm:text-xs font-bold flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+                                }`}>
+                                {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} className="text-rose-500" />}
+                                {message.text}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Start Phase</label>
+                                    <input
+                                        type="time"
+                                        {...register('startTime')}
+                                        className="w-full rounded-xl sm:rounded-2xl border-2 border-slate-100 p-3 sm:p-4 text-sm font-bold focus:border-primary-500 focus:outline-none transition-all hover:border-slate-200"
+                                    />
+                                    {errors.startTime && <p className="text-[10px] font-bold text-rose-500 pl-2 italic">{errors.startTime.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">End Phase</label>
+                                    <input
+                                        type="time"
+                                        {...register('endTime')}
+                                        className="w-full rounded-xl sm:rounded-2xl border-2 border-slate-100 p-3 sm:p-4 text-sm font-bold focus:border-primary-500 focus:outline-none transition-all hover:border-slate-200"
+                                    />
+                                    {errors.endTime && <p className="text-[10px] font-bold text-rose-500 pl-2 italic">{errors.endTime.message}</p>}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Session Justification</label>
+                                <textarea
+                                    {...register('justification')}
+                                    rows={4}
+                                    placeholder="Briefly state the academic or research objective for this session..."
+                                    className="w-full rounded-xl sm:rounded-2xl border-2 border-slate-100 p-3 sm:p-4 text-sm font-bold focus:border-primary-500 focus:outline-none transition-all hover:border-slate-200 resize-none"
+                                />
+                                {errors.justification && <p className="text-[10px] font-bold text-rose-500 pl-2 italic">{errors.justification.message}</p>}
+                            </div>
+
+                            <div className="pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="btn-premium flex w-full items-center justify-center gap-3 py-4 sm:py-5 shadow-lg shadow-college-navy/20"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" /> : (
+                                        <>
+                                            Submit Protocol
+                                            <ShieldCheck size={20} />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
+const AlertTriangle = ({ size, className }: { size: number, className: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
+    </svg>
+);

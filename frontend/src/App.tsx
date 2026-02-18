@@ -15,12 +15,7 @@ import { SpecialBooking } from './pages/bookings/SpecialBooking';
 import { MyBookings } from './pages/bookings/MyBookings';
 import { ApprovalPanel } from './pages/dashboard/approvals/ApprovalPanel';
 
-// Placeholder dashboards
-const StudentDashboard = () => <div>Student Dashboard</div>;
-const FacultyDashboard = () => <div>Faculty Dashboard</div>; // We replaced these with actual files but imports might be missing if I overwrite. 
-// Wait, I created StudentDashboard.tsx etc in src/pages/dashboard/...
-// I should import them properly.
-
+// Actual dashboards imported from their respective pages
 import { StudentDashboard as StudentDashboardPage } from './pages/dashboard/student/StudentDashboard';
 import { FacultyDashboard as FacultyDashboardPage } from './pages/dashboard/faculty/FacultyDashboard';
 import { LabInChargeDashboard as LabInChargeDashboardPage } from './pages/dashboard/lab-in-charge/LabInChargeDashboard';
@@ -59,19 +54,18 @@ const App: React.FC = () => {
           {/* Role-based Routes */}
           <Route element={<RequireRole allowedRoles={['student']} />}>
             <Route path="/dashboard/student" element={<StudentDashboardPage />} />
-            {/* Student bookings are handled by shared route, but we can add specific sub-routes if needed later */}
           </Route>
 
-          <Route element={<RequireRole allowedRoles={['faculty']} />}>
-            <Route path="/dashboard/faculty" element={<FacultyDashboardPage />} />
-            <Route path="/dashboard/faculty/approvals" element={<ApprovalPanel />} />
+          <Route element={<RequireRole allowedRoles={['staff']} />}>
+            <Route path="/dashboard/staff" element={<FacultyDashboardPage />} />
+            <Route path="/dashboard/staff/approvals" element={<ApprovalPanel />} />
           </Route>
 
-          <Route element={<RequireRole allowedRoles={['lab_in_charge']} />}>
-            <Route path="/dashboard/lab-in-charge" element={<LabInChargeDashboardPage />} />
-            <Route path="/dashboard/lab-in-charge/approvals" element={<ApprovalPanel />} />
-            <Route path="/dashboard/lab-in-charge/schedule" element={<div>Lab Schedule Placeholder</div>} />
-            <Route path="/dashboard/lab-in-charge/resources" element={<div>Manage Resources Placeholder</div>} />
+          <Route element={<RequireRole allowedRoles={['lab_incharge']} />}>
+            <Route path="/dashboard/lab-incharge" element={<LabInChargeDashboardPage />} />
+            <Route path="/dashboard/lab-incharge/approvals" element={<ApprovalPanel />} />
+            <Route path="/dashboard/lab-incharge/schedule" element={<div>Lab Schedule Placeholder</div>} />
+            <Route path="/dashboard/lab-incharge/resources" element={<div>Manage Resources Placeholder</div>} />
           </Route>
 
           <Route element={<RequireRole allowedRoles={['admin']} />}>

@@ -1,26 +1,35 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
-import { PublicLayout } from '../../layouts/PublicLayout';
 
 export const Unauthorized: React.FC = () => {
     return (
-        <PublicLayout>
-            <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-                <div className="mb-6 rounded-full bg-red-100 p-6 text-red-600">
-                    <ShieldAlert size={64} />
+        <div className="container mx-auto px-4">
+            <div className="flex min-h-[70vh] flex-col items-center justify-center text-center py-12">
+                <div className="mb-8 rounded-[2rem] bg-rose-50 p-8 text-rose-500 shadow-xl shadow-rose-500/10 animate-fade-in-up">
+                    <ShieldAlert size={80} strokeWidth={1.5} />
                 </div>
-                <h1 className="mb-4 text-3xl font-bold text-slate-900">Access Denied</h1>
-                <p className="mb-8 max-w-md text-slate-600">
-                    You do not have permission to access this resource. If you believe this is an error, please contact the administrator.
+                <h1 className="mb-4 text-4xl font-black text-college-navy tracking-tight italic uppercase animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                    Access Denied
+                </h1>
+                <p className="mb-10 max-w-md text-lg font-medium text-slate-500 italic leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    Your current authorization level is insufficient to access this protocol. Please contact structural administration if you believe this is an error.
                 </p>
-                <Link
-                    to="/dashboard"
-                    className="rounded-lg bg-indigo-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-indigo-700"
-                >
-                    Return to Dashboard
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                    <Link
+                        to="/login"
+                        className="btn-premium flex items-center justify-center gap-2"
+                    >
+                        Authenticate Again
+                    </Link>
+                    <Link
+                        to="/"
+                        className="btn-premium-outline flex items-center justify-center"
+                    >
+                        Return to Portal
+                    </Link>
+                </div>
             </div>
-        </PublicLayout>
+        </div>
     );
 };

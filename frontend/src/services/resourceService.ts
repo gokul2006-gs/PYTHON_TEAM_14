@@ -1,12 +1,15 @@
 import api from '../lib/axios';
 
 export interface Resource {
-    id: string;
+    id: number;
     name: string;
-    type: 'lab' | 'equipment' | 'venue';
-    location: string;
+    type: 'LAB' | 'CLASSROOM' | 'EVENT_HALL' | 'COMPUTER' | 'MEETING_ROOM';
     capacity: number;
-    status: 'active' | 'maintenance';
+    status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+    lab_in_charge?: number;
+    lab_in_charge_name?: string;
+    assigned_staff?: number;
+    assigned_staff_name?: string;   
 }
 
 export const resourceService = {

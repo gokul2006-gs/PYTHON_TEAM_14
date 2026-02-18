@@ -1,7 +1,7 @@
-export type UserRole = 'student' | 'faculty' | 'lab_in_charge' | 'admin';
+export type UserRole = 'student' | 'staff' | 'lab_incharge' | 'admin';
 
 export interface User {
-    id: string;
+    id: number;
     name: string;
     email: string;
     role: UserRole;

@@ -1,79 +1,115 @@
 import React from 'react';
-
-import { CalendarCheck, ShieldCheck, Users, Clock } from 'lucide-react';
+import { CalendarCheck, ShieldCheck, GraduationCap, Building2, BookOpen, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
-    <div className="group rounded-2xl border border-slate-100 bg-slate-50 p-8 transition-all hover:border-indigo-100 hover:bg-white hover:shadow-lg">
-        <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-50 transition-colors group-hover:bg-indigo-100">
+const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string; delay?: string }> = ({ icon, title, description, delay = '0' }) => (
+    <div
+        className="group relative overflow-hidden rounded-3xl border border-white/40 bg-white/40 p-10 backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:bg-white/80 hover:shadow-2xl hover:shadow-college-navy/10 animate-fade-in-up"
+        style={{ animationDelay: delay }}
+    >
+        <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary-50/50 blur-3xl transition-colors group-hover:bg-primary-100/50" />
+        <div className="relative mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg shadow-primary-100/50 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
             {icon}
         </div>
-        <h3 className="mb-3 text-xl font-bold text-slate-900">{title}</h3>
-        <p className="text-slate-600 leading-relaxed">{description}</p>
+        <h3 className="relative mb-4 text-2xl font-bold text-college-navy">{title}</h3>
+        <p className="relative text-slate-600 leading-relaxed">{description}</p>
+    </div>
+);
+
+const StatCard: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+    <div className="text-center">
+        <div className="text-4xl font-black text-college-navy mb-1">{value}</div>
+        <div className="text-sm font-semibold uppercase tracking-widest text-slate-500">{label}</div>
     </div>
 );
 
 export const LandingPage: React.FC = () => {
     return (
-        <>
+        <div className="relative min-h-screen bg-slate-50">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 -z-10 overflow-hidden">
+                <div className="absolute -top-[10%] -left-[10%] h-[500px] w-[500px] rounded-full bg-primary-200/20 blur-[120px] animate-float" />
+                <div className="absolute top-[40%] -right-[5%] h-[400px] w-[400px] rounded-full bg-college-gold/10 blur-[100px] animate-float" style={{ animationDelay: '-3s' }} />
+                <div className="absolute -bottom-[5%] left-[20%] h-[300px] w-[300px] rounded-full bg-primary-300/20 blur-[80px] animate-float" style={{ animationDelay: '-1.5s' }} />
+            </div>
+
             {/* Hero Section */}
-            <section className="relative overflow-hidden pt-16 pb-24 lg:pt-32">
-                <div className="container mx-auto px-4 text-center">
-                    <div className="mx-auto max-w-4xl">
-                        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                            Streamlining Campus Resources with <span className="text-indigo-600">Security & Precision</span>
+            <section className="relative pt-24 pb-20 lg:pt-40 lg:pb-32">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-college-gold/30 bg-college-gold/5 px-4 py-2 text-sm font-bold text-college-gold mb-8 animate-fade-in-up">
+                            <GraduationCap className="h-4 w-4" />
+                            Official Campus Resource Portal
+                        </div>
+
+                        <h1 className="mb-8 max-w-5xl text-5xl font-black tracking-tight text-college-navy sm:text-6xl lg:text-8xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                            Modernizing <span className="premium-gradient-text">Academic Excellence</span>
                         </h1>
-                        <p className="mb-10 text-lg text-slate-600 sm:text-xl">
-                            The centralized platform for students, faculty, and administrators to manage labs, equipment, and venues efficiently. Secure, role-based, and always reliable.
+
+                        <p className="mb-12 max-w-3xl text-xl text-slate-600 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                            The unified ecosystem for students and faculty to orchestrate labs, venues, and research equipment with unprecedented ease and security.
                         </p>
-                        <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                            <Link
-                                to="/login"
-                                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-indigo-700 hover:shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                            >
-                                Access Portal
+
+                        <div className="flex flex-col items-center justify-center gap-6 sm:flex-row animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                            <Link to="/login" className="btn-premium flex items-center gap-2">
+                                Access Portal <Building2 className="h-5 w-5" />
                             </Link>
-                            <Link
-                                to="/signup"
-                                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-8 py-3 text-base font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                            >
-                                Create Account
+                            <Link to="/signup" className="btn-premium-outline">
+                                Join Organization
                             </Link>
+                        </div>
+
+                        {/* Stats Section */}
+                        <div className="mt-24 grid w-full max-w-4xl grid-cols-2 gap-12 border-t border-slate-200 pt-16 md:grid-cols-4 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                            <StatCard value="250+" label="Resources" />
+                            <StatCard value="5k+" label="Monthly Bookings" />
+                            <StatCard value="12" label="Departments" />
+                            <StatCard value="100%" label="Security" />
                         </div>
                     </div>
                 </div>
-
-                {/* Abstract Background Decoration */}
-                <div className="absolute top-0 left-1/2 -z-10 h-[600px] w-full -translate-x-1/2 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-white opacity-70"></div>
             </section>
 
             {/* Features Grid */}
-            <section className="bg-white py-24">
+            <section className="relative bg-white/50 py-32 backdrop-blur-sm">
                 <div className="container mx-auto px-4">
-                    <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="mb-20 text-center">
+                        <h2 className="mb-4 text-4xl font-bold text-college-navy">Smart Infrastructure</h2>
+                        <p className="mx-auto max-w-2xl text-lg text-slate-600">
+                            Our platform provides the heavy lifting, so you can focus on innovation and research.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                         <FeatureCard
-                            icon={<ShieldCheck className="h-8 w-8 text-indigo-600" />}
-                            title="Secure Access"
-                            description="Role-based authentication ensures only authorized personnel access sensitive resources."
+                            delay="0.1s"
+                            icon={<ShieldCheck className="h-8 w-8 text-primary-600" />}
+                            title="Enterprise Security"
+                            description="Military-grade role-based access control protecting your institution's vital assets."
                         />
                         <FeatureCard
-                            icon={<CalendarCheck className="h-8 w-8 text-indigo-600" />}
-                            title="Smart Booking"
-                            description="Real-time availability checks and conflict resolution for labs and equipment."
+                            delay="0.2s"
+                            icon={<CalendarCheck className="h-8 w-8 text-primary-600" />}
+                            title="Dynamic Booking"
+                            description="Intelligent conflict resolution and live availability updates for all campus venues."
                         />
                         <FeatureCard
-                            icon={<Users className="h-8 w-8 text-indigo-600" />}
-                            title="Multi-Role Support"
-                            description="Tailored dashboards for Students, Faculty, Lab In-Charges, and Administrators."
+                            delay="0.3s"
+                            icon={<BookOpen className="h-8 w-8 text-primary-600" />}
+                            title="Research First"
+                            description="Dedicated workflows for lab equipment and specialized research facilities."
                         />
                         <FeatureCard
-                            icon={<Clock className="h-8 w-8 text-indigo-600" />}
-                            title="Instant Approvals"
-                            description="Streamlined workflow for booking approvals and automated notifications."
+                            delay="0.4s"
+                            icon={<Award className="h-8 w-8 text-primary-600" />}
+                            title="Quality Assurance"
+                            description="Comprehensive audit logs and performance tracking for all organizational resources."
                         />
                     </div>
                 </div>
             </section>
-        </>
+
+            {/* Footer handled by PublicLayout */}
+        </div>
     );
 };

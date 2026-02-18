@@ -9,7 +9,7 @@ export const authService = {
     },
 
     register: async (data: SignupFormData): Promise<void> => {
-        await api.post('/auth/register/', data);
+        await api.post('/users/signup/', data);
     },
 
     logout: async () => {

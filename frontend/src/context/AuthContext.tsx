@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import api from '../lib/axios';
-import type { User, AuthState, LoginResponse } from '../types/auth';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import type { User, AuthState } from '../types/auth';
 
 interface AuthContextType extends AuthState {
     login: (token: string, user: User) => void;
@@ -11,9 +10,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AuthState>({
-        user: null,
+        user: JSON.parse(localStorage.getItem('user') || 'null'),
         token: localStorage.getItem('token'),
-        isAuthenticated: false,
+        isAuthenticated: !!localStorage.getItem('token'),
         isLoading: true,
     });
 
@@ -22,22 +21,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const token = localStorage.getItem('token');
             if (token) {
                 try {
-                    // Verify token and get user details from backend
-                    // tailored for Django backend usually /auth/me or /users/me
-                    // detailed implementation will depend on actual backend route
-                    // For now, we assume valid if token exists, but ideally we fetch user
-                    // const response = await api.get('/auth/me'); 
-                    // setState({ user: response.data, token, isAuthenticated: true, isLoading: false });
+                    // In a real app, verify token with backend here
+                    // const response = await api.get('/auth/me');
+                    // login(token, response.data);
 
-                    // Placeholder: We need the backend to give us the user. 
-                    // If we stored user in localStorage, we could recover it, but that's insecure for roles.
-                    // We will mark as loading until we have a real backend endpoint to verify.
-                    // For this architecture step, we'll assume we can't verify without backend yet.
-                    setState(prev => ({ ...prev, isLoading: false }));
+                    const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+                    if (savedUser) {
+                        setState(prev => ({ ...prev, user: savedUser, isAuthenticated: true, isLoading: false }));
+                    } else {
+                        // Token exists but no user data - might need to re-login or fetch
+                        setState(prev => ({ ...prev, isLoading: false }));
+                    }
                 } catch (error) {
                     console.error("Session verification failed", error);
-                    localStorage.removeItem('token');
-                    setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+                    logout();
                 }
             } else {
                 setState(prev => ({ ...prev, isLoading: false }));
@@ -49,6 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = (token: string, user: User) => {
         localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
         setState({
             user,
             token,
@@ -59,13 +57,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setState({
             user: null,
             token: null,
             isAuthenticated: false,
             isLoading: false,
         });
-        // Optional: api.post('/auth/logout') if backend requires it
     };
 
     return (

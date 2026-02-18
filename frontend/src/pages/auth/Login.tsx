@@ -6,7 +6,7 @@ import { AuthLayout } from '../../layouts/AuthLayout';
 import { loginSchema, type LoginFormData } from '../../utils/validation';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, ArrowRight, UserCircle2, GraduationCap, ShieldCheck, Briefcase } from 'lucide-react';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -14,8 +14,8 @@ export const Login: React.FC = () => {
     const { login } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'STAFF' | 'LAB_INCHARGE' | 'ADMIN'>('STUDENT');
 
-    // Retrieve message passed from signup redirect
     const successMessage = location.state?.message;
 
     const {
@@ -31,28 +31,27 @@ export const Login: React.FC = () => {
         setError(null);
         try {
             const response = await authService.login(data);
-            login(response.token, response.user);
+            const user = { ...response.user, role: response.user.role.toLowerCase() as any };
+            login(response.token, user);
 
-            // Role-based redirection
-            switch (response.user.role) {
-                case 'student':
+            const role = user.role.toUpperCase();
+            switch (role) {
+                case 'STUDENT':
                     navigate('/dashboard/student');
                     break;
-                case 'faculty':
-                    navigate('/dashboard/faculty');
+                case 'STAFF':
+                    navigate('/dashboard/staff');
                     break;
-                case 'lab_in_charge':
-                    navigate('/dashboard/lab-in-charge');
+                case 'LAB_INCHARGE':
+                    navigate('/dashboard/lab-incharge');
                     break;
-                case 'admin':
+                case 'ADMIN':
                     navigate('/dashboard/admin');
                     break;
                 default:
-                    navigate('/dashboard'); // Fallback
+                    navigate('/dashboard');
             }
         } catch (err: any) {
-            // Strict backend error handling
-            // If the backend says "Account Locked", we show it exactly.
             const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
             setError(message);
         } finally {
@@ -62,99 +61,97 @@ export const Login: React.FC = () => {
 
     return (
         <AuthLayout
-            title="Sign in to your account"
-            subtitle="Access your dashboard"
+            title="Institutional Access"
+            subtitle="Secure gateway to the CampusCore ecosystem."
         >
-            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-                {/* Success Message from Signup */}
-                {successMessage && !error && (
-                    <div className="rounded-md bg-green-50 p-4">
-                        <div className="flex">
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-green-800">{successMessage}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Error Message */}
-                {error && (
-                    <div className="rounded-md bg-red-50 p-4">
-                        <div className="flex">
-                            <div className="flex-shrink-0">
-                                <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="text-sm font-medium text-red-800">Login Error</h3>
-                                <div className="mt-2 text-sm text-red-700">
-                                    <p>{error}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div>
-                    <label htmlFor="email" className="block text-sm font-medium leading-6 text-slate-900">
-                        Email address
-                    </label>
-                    <div className="mt-2">
-                        <input
-                            id="email"
-                            type="email"
-                            autoComplete="email"
-                            {...register('email')}
-                            className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                        />
-                        {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>}
-                    </div>
-                </div>
-
-                <div>
-                    <div className="flex items-center justify-between">
-                        <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">
-                            Password
-                        </label>
-                        <div className="text-sm">
-                            <Link to="/forgot-password" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                                Forgot password?
-                            </Link>
-                        </div>
-                    </div>
-                    <div className="mt-2">
-                        <input
-                            id="password"
-                            type="password"
-                            autoComplete="current-password"
-                            {...register('password')}
-                            className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                        />
-                        {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>}
-                    </div>
-                </div>
-
-                <div>
+            {/* Role Switcher */}
+            <div className="mb-8 grid grid-cols-2 xs:grid-cols-4 gap-2 sm:gap-3">
+                {[
+                    { id: 'STUDENT', icon: GraduationCap },
+                    { id: 'STAFF', icon: UserCircle2 },
+                    { id: 'LAB_INCHARGE', icon: Briefcase },
+                    { id: 'ADMIN', icon: ShieldCheck },
+                ].map((role) => (
                     <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70 disabled:cursor-not-allowed"
+                        key={role.id}
+                        type="button"
+                        onClick={() => setSelectedRole(role.id as any)}
+                        className={`flex flex-col items-center justify-center rounded-2xl border py-3.5 sm:py-4 transition-all ${selectedRole === role.id
+                            ? 'border-primary-500 bg-primary-50 text-primary-600 shadow-lg shadow-primary-500/10'
+                            : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                            }`}
                     >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Signing in...
-                            </>
-                        ) : (
-                            'Sign In'
-                        )}
+                        <role.icon size={18} className="sm:w-5 sm:h-5" />
+                        <span className="mt-1.5 text-[7px] sm:text-[9px] font-black uppercase tracking-tighter sm:tracking-widest">{role.id.replace('_', ' ')}</span>
                     </button>
+                ))}
+            </div>
+
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                {successMessage && !error && (
+                    <div className="rounded-2xl bg-emerald-50 p-4 border border-emerald-100 flex items-center gap-3">
+                        <ShieldCheck className="text-emerald-500" size={20} />
+                        <p className="text-xs font-bold text-emerald-800">{successMessage}</p>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="rounded-2xl bg-red-50 p-4 border border-red-100 flex items-start gap-3">
+                        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={20} />
+                        <div>
+                            <h3 className="text-xs font-bold text-red-800 uppercase tracking-widest">Access Denied</h3>
+                            <p className="mt-1 text-xs font-medium text-red-700 leading-relaxed">{error}</p>
+                        </div>
+                    </div>
+                )}
+
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2 px-1">Institutional Email</label>
+                    <input
+                        type="email"
+                        {...register('email')}
+                        placeholder="e.g. gokul@campus.edu"
+                        className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 px-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all hover:bg-white"
+                    />
+                    {errors.email && <p className="mt-2 text-xs font-bold text-red-600 px-1">{errors.email.message}</p>}
                 </div>
+
+                <div>
+                    <div className="flex items-center justify-between mb-2 px-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security Phrase</label>
+                        <Link to="/forgot-password" title="Recover access" className="text-[10px] font-black uppercase tracking-widest text-primary-600 hover:text-primary-700">
+                            Lost Key?
+                        </Link>
+                    </div>
+                    <input
+                        type="password"
+                        {...register('password')}
+                        placeholder="••••••••"
+                        className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 px-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all hover:bg-white"
+                    />
+                    {errors.password && <p className="mt-2 text-xs font-bold text-red-600 px-1">{errors.password.message}</p>}
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="btn-premium flex w-full items-center justify-center gap-2 py-4"
+                >
+                    {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                        <>
+                            Authenticate Access
+                            <ArrowRight size={18} className="ml-1" />
+                        </>
+                    )}
+                </button>
             </form>
 
-            <p className="mt-10 text-center text-sm text-slate-500">
-                Not a member?{' '}
-                <Link to="/signup" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-                    Sign up now
+            <p className="mt-10 text-center text-xs font-bold text-slate-400">
+                New to the system?{' '}
+                <Link to="/signup" className="text-primary-600 hover:underline underline-offset-4">
+                    Initialize Enrollment
                 </Link>
             </p>
         </AuthLayout>
