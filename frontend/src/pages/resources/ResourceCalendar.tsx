@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { format, addDays, startOfToday } from 'date-fns';
 import { resourceService, type Resource } from '../../services/resourceService';
 import { bookingService } from '../../services/bookingService';
@@ -18,7 +19,7 @@ type BookingFormData = z.infer<typeof bookingSchema>;
 
 export const ResourceCalendar: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    // const navigate = useNavigate();
+    const { user } = useAuth();
     const [resource, setResource] = useState<Resource | null>(null);
     const [selectedDate, setSelectedDate] = useState(startOfToday());
     const [availability, setAvailability] = useState<{ start_time: string; end_time: string }[]>([]);
@@ -165,8 +166,18 @@ export const ResourceCalendar: React.FC = () => {
                     <div className="absolute top-0 right-0 h-32 w-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50" />
 
                     <div className="relative z-10">
-                        <h2 className="text-xl sm:text-2xl font-black text-college-navy italic mb-2">Protocol Request</h2>
-                        <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-6 sm:mb-8">Submit your session justification</p>
+                        <div className="flex items-center justify-between mb-2">
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-black text-college-navy italic leading-tight">Protocol Request</h2>
+                                <p className="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Submit your session justification</p>
+                            </div>
+                            <Link
+                                to={`/dashboard/${user?.role.toLowerCase()}/special-booking/${id}`}
+                                className="text-[10px] font-black uppercase tracking-widest text-primary-600 hover:text-primary-700 bg-primary-50 px-3 py-2 rounded-xl transition-all"
+                            >
+                                Special Request?
+                            </Link>
+                        </div>
 
                         {message && (
                             <div className={`mb-6 sm:mb-8 rounded-2xl p-4 text-[10px] sm:text-xs font-bold flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'

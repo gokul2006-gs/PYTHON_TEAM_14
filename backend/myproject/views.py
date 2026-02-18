@@ -187,10 +187,13 @@ class BookingViewSet(viewsets.ModelViewSet):
                 end_dt = datetime.strptime(end_time[:5], '%H:%M')
                 duration = (end_dt - start_dt).total_seconds() / 3600
                 
-                if user.role == 'STUDENT' and duration > 1:
-                    return Response({"error": "Students are restricted to 60-minute sessions per booking."}, status=400)
-                if user.role == 'STAFF' and duration > 4:
-                    return Response({"error": "Staff sessions are limited to a maximum of 4 hours."}, status=400)
+                # Special bookings bypass standard limits as they are for institutional events like symposiums
+                if booking_type != 'SPECIAL':
+                    if user.role == 'STUDENT' and duration > 1:
+                        return Response({"error": "Students are restricted to 60-minute sessions per booking."}, status=400)
+                    if user.role == 'STAFF' and duration > 4:
+                        return Response({"error": "Staff sessions are limited to a maximum of 4 hours."}, status=400)
+                
                 if duration <= 0:
                     return Response({"error": "Invalid temporal range: End time must succeed start time."}, status=400)
             except ValueError:
@@ -224,9 +227,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         if booking_type == 'SPECIAL': priority = 2
         elif user.role in ['STAFF', 'ADMIN']: priority = 1
 
-        # Staff bookings are auto-approved per requirement: "staff book panna staff ah aprovel kudukra marri"
+        # Staff bookings are auto-approved for normal requests, but SPECIAL ones require oversight
         booking_status = 'PENDING'
-        if user.role == 'STAFF' and booking_type != 'MEETING':
+        if user.role == 'STAFF' and booking_type not in ['MEETING', 'SPECIAL']:
             booking_status = 'APPROVED'
         elif user.role == 'ADMIN':
             booking_status = 'APPROVED'
