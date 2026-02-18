@@ -21,7 +21,8 @@ export interface Booking {
 }
 
 export interface BookingRequest {
-    resource: number;
+    resource?: number;
+    staff_id?: string;
     booking_date: string;
     start_time: string;
     end_time: string;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Clock, Plus, ArrowRight, Zap, Target, BookOpen, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Plus, ArrowRight, Zap, Target, BookOpen, Loader2, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { userService } from '../../../services/userService';
@@ -53,13 +53,20 @@ export const StudentDashboard: React.FC = () => {
                         <p className="text-slate-500 font-medium text-sm sm:text-base">Ready to manage your campus resources for today?</p>
                     </div>
                 </div>
-                <div className="flex w-full md:w-auto gap-4">
+                <div className="flex flex-wrap w-full md:w-auto gap-4">
                     <Link
                         to="/dashboard/student/resources"
-                        className="btn-premium flex flex-1 sm:flex-none items-center justify-center gap-2 py-3 px-6"
+                        className="btn-premium flex flex-1 sm:flex-none items-center justify-center gap-2 py-3 px-6 shadow-xl shadow-primary-500/20"
                     >
                         <Plus size={20} />
                         New Booking
+                    </Link>
+                    <Link
+                        to="/dashboard/student/faculty-meeting"
+                        className="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-2xl bg-white border-2 border-slate-100 py-3 px-6 text-sm font-bold text-college-navy hover:bg-slate-50 transition-all"
+                    >
+                        <Users size={20} />
+                        Faculty Meeting
                     </Link>
                 </div>
             </div>

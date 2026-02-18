@@ -13,6 +13,7 @@ import { ResourceList } from './pages/resources/ResourceList';
 import { ResourceCalendar } from './pages/resources/ResourceCalendar';
 import { SpecialBooking } from './pages/bookings/SpecialBooking';
 import { MyBookings } from './pages/bookings/MyBookings';
+import { FacultyMeeting } from './pages/bookings/FacultyMeeting';
 import { ApprovalPanel } from './pages/dashboard/approvals/ApprovalPanel';
 
 // Actual dashboards imported from their respective pages
@@ -23,6 +24,7 @@ import { AdminDashboard as AdminDashboardPage } from './pages/dashboard/admin/Ad
 import { UserManagement } from './pages/dashboard/admin/UserManagement';
 import { ResourceManagement } from './pages/dashboard/admin/ResourceManagement';
 import { AuditLogs } from './pages/dashboard/admin/AuditLogs';
+import { AllBookings } from './pages/dashboard/admin/AllBookings';
 
 const App: React.FC = () => {
   return (
@@ -51,6 +53,7 @@ const App: React.FC = () => {
 
           {/* Shared Booking Routes */}
           <Route path="/dashboard/:role/bookings" element={<MyBookings />} />
+          <Route path="/dashboard/:role/faculty-meeting" element={<FacultyMeeting />} />
 
           {/* Role-based Routes */}
           <Route element={<RequireRole allowedRoles={['STUDENT']} />}>
@@ -72,7 +75,7 @@ const App: React.FC = () => {
           <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
             <Route path="/dashboard/admin" element={<AdminDashboardPage />} />
             <Route path="/dashboard/admin/approvals" element={<ApprovalPanel />} />
-            <Route path="/dashboard/admin/bookings" element={<div>All Bookings Admin View</div>} />
+            <Route path="/dashboard/admin/bookings" element={<AllBookings />} />
             <Route path="/dashboard/admin/users" element={<UserManagement />} />
             <Route path="/dashboard/admin/resources" element={<ResourceManagement />} />
             <Route path="/dashboard/admin/audit" element={<AuditLogs />} />

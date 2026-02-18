@@ -124,12 +124,11 @@ export const Login: React.FC = () => {
                 </button>
             </form>
 
-            <p className="mt-10 text-center text-xs font-bold text-slate-400">
-                New to the system?{' '}
-                <Link to="/signup" className="text-primary-600 hover:underline underline-offset-4">
-                    Initialize Enrollment
-                </Link>
-            </p>
+            <div className="mt-10 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 italic">
+                    Institutional Identity Management System v2.0
+                </p>
+            </div>
         </AuthLayout>
     );
 };

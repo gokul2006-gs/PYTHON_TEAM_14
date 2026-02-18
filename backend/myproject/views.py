@@ -32,7 +32,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'signup':
-            return [permissions.AllowAny()]
+            return [IsAdminRole()]
         if self.action == 'student_stats':
             return [permissions.IsAuthenticated()]
         if self.action == 'list':
@@ -170,6 +170,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = request.user
         resource_id = request.data.get('resource')
+        staff_id = request.data.get('staff_id') # New: Direct staff meeting request
         booking_date = request.data.get('booking_date')
         start_time = request.data.get('start_time')
         end_time = request.data.get('end_time')
@@ -178,6 +179,21 @@ class BookingViewSet(viewsets.ModelViewSet):
         if user.status == 'INACTIVE':
             return Response({"error": "Inactive users cannot initiate requests"}, status=403)
             
+        # Handle Staff ID lookup for meetings
+        if staff_id and not resource_id:
+            try:
+                staff_target = User.objects.get(employee_id=staff_id, role='STAFF')
+                # Find a resource assigned to this staff or a general meeting room
+                resource = Resource.objects.filter(assigned_staff=staff_target).first()
+                if not resource:
+                    resource = Resource.objects.filter(type='MEETING_ROOM').first()
+                if not resource:
+                    return Response({"error": "Target faculty has no assigned consultation space."}, status=400)
+                resource_id = resource.id
+                booking_type = 'MEETING'
+            except User.DoesNotExist:
+                return Response({"error": "Identified Staff ID not found in institutional records."}, status=404)
+
         try:
             resource = Resource.objects.get(id=resource_id)
         except:
@@ -186,28 +202,42 @@ class BookingViewSet(viewsets.ModelViewSet):
         if resource.status != 'ACTIVE':
             return Response({"error": f"Resource status: {resource.status}"}, status=400)
 
-        # Priority & Logic
+        # Priority & Status Logic
         priority = 0
         if booking_type == 'SPECIAL': priority = 2
-        elif user.role == 'STAFF' or user.role == 'ADMIN': priority = 1
+        elif user.role in ['STAFF', 'ADMIN']: priority = 1
 
-        serializer = self.get_serializer(data=request.data)
+        # Staff bookings are auto-approved per requirement: "staff book panna staff ah aprovel kudukra marri"
+        booking_status = 'PENDING'
+        if user.role == 'STAFF' and booking_type != 'MEETING':
+            booking_status = 'APPROVED'
+        elif user.role == 'ADMIN':
+            booking_status = 'APPROVED'
+
+        # Merge resource_id back into data if derived
+        data = request.data.copy()
+        data['resource'] = resource_id
+        data['booking_type'] = booking_type
+
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        booking = serializer.save(user=user, priority_level=priority, status='PENDING')
+        booking = serializer.save(user=user, priority_level=priority, status=booking_status)
         
-        AuditLog.objects.create(user=user, action="REQUEST_CREATED", details=f"Request {booking.id} pending review.")
+        AuditLog.objects.create(user=user, action="REQUEST_CREATED", details=f"Request {booking.id} status: {booking_status}")
         
-        # Determine Approver Notification
-        notification_msg = f"New Request: {user.username} is requesting access to {resource.name} on {booking_date}."
-        if resource.type == 'LAB' and resource.lab_in_charge:
-            Notification.objects.create(user=resource.lab_in_charge, message=notification_msg)
-        elif booking_type == 'MEETING' and resource.assigned_staff:
-            Notification.objects.create(user=resource.assigned_staff, message=notification_msg)
+        # Notify Approver
+        if booking_status == 'PENDING':
+            notification_msg = f"New Request: {user.username} is requesting access to {resource.name} on {booking_date}."
+            if resource.type == 'LAB' and resource.lab_in_charge:
+                Notification.objects.create(user=resource.lab_in_charge, message=notification_msg)
+            elif booking_type == 'MEETING' and resource.assigned_staff:
+                Notification.objects.create(user=resource.assigned_staff, message=notification_msg)
+            else:
+                admins = User.objects.filter(role='ADMIN')
+                for admin in admins:
+                    Notification.objects.create(user=admin, message=notification_msg)
         else:
-            # Notify all Admins for general resource/special requests
-            admins = User.objects.filter(role='ADMIN')
-            for admin in admins:
-                Notification.objects.create(user=admin, message=notification_msg)
+            Notification.objects.create(user=user, message=f"Booking for {resource.name} has been AUTO-APPROVED.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -219,17 +249,18 @@ class BookingViewSet(viewsets.ModelViewSet):
         if booking.status != 'PENDING':
             return Response({"error": "Already processed"}, status=400)
             
-        if booking.user == user:
-            return Response({"error": "Self-approval restricted"}, status=400)
-
         # Hierarchy Rules
         can_approve = False
-        if user.role == 'ADMIN': # HOD can approve everything
+        if user.role == 'ADMIN': 
             can_approve = True
         elif user.role == 'LAB_INCHARGE' and booking.resource.type == 'LAB':
             if booking.resource.lab_in_charge == user: can_approve = True
-        elif user.role == 'STAFF' and booking.booking_type == 'MEETING':
-            if booking.resource.assigned_staff == user: can_approve = True
+        elif user.role == 'STAFF':
+            # Staff can approve meetings directed at them OR their own bookings now
+            if booking.booking_type == 'MEETING' and booking.resource.assigned_staff == user:
+                can_approve = True
+            elif booking.user == user: # Self-approval for staff authorized
+                can_approve = True
         
         if not can_approve:
             return Response({"error": "Authorization failed"}, status=403)

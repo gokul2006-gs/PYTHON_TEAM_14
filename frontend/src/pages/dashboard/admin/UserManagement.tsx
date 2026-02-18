@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon, Shield, Search, MoreVertical, Loader2, AlertCircle } from 'lucide-react';
+import { Shield, Search, MoreVertical, Loader2, AlertCircle, UserPlus, X, Plus, Check } from 'lucide-react';
 import { userService, type User } from '../../../services/userService';
 
 export const UserManagement: React.FC = () => {
@@ -7,6 +7,19 @@ export const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isAddingUser, setIsAddingUser] = useState(false);
+
+    // Enrollment Form State
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: 'CampusPassword123', // Default institutional password
+        role: 'STUDENT',
+        department: '',
+        roll_number: '',
+        employee_id: '',
+        phone: ''
+    });
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -26,6 +39,23 @@ export const UserManagement: React.FC = () => {
         fetchUsers();
     }, []);
 
+    const handleEnroll = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        try {
+            await userService.enroll(formData);
+            setFormData({
+                name: '', email: '', password: 'CampusPassword123',
+                role: 'STUDENT', department: '', roll_number: '',
+                employee_id: '', phone: ''
+            });
+            setIsAddingUser(false);
+            fetchUsers();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to enroll user into the system.');
+        }
+    };
+
     const filteredUsers = users.filter(user =>
         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -38,13 +68,116 @@ export const UserManagement: React.FC = () => {
                     <h1 className="text-3xl font-black text-college-navy tracking-tight italic leading-tight">Identity Registry</h1>
                     <p className="text-slate-500 font-medium italic mt-1 text-sm sm:text-base">Manage institutional user access and authorization protocols.</p>
                 </div>
-                <button
-                    onClick={fetchUsers}
-                    className="btn-premium flex items-center justify-center gap-2 py-3 px-6 shadow-lg shadow-college-navy/10 active:scale-95 transition-all"
-                >
-                    Refresh Registry <UserIcon size={18} />
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={fetchUsers}
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-college-navy hover:shadow-lg transition-all"
+                    >
+                        <Loader2 className={isLoading ? 'animate-spin' : ''} size={20} />
+                    </button>
+                    <button
+                        onClick={() => setIsAddingUser(!isAddingUser)}
+                        className={`btn-premium flex items-center justify-center gap-2 py-3 px-6 shadow-lg shadow-college-navy/10 active:scale-95 transition-all ${isAddingUser ? 'bg-rose-600 hover:bg-rose-700' : ''}`}
+                    >
+                        {isAddingUser ? (
+                            <><X size={18} /> Cancel Enrollment</>
+                        ) : (
+                            <><UserPlus size={18} /> Enroll New User</>
+                        )}
+                    </button>
+                </div>
             </div>
+
+            {/* Quick Enrollment Form */}
+            {isAddingUser && (
+                <div className="rounded-[2.5rem] border-2 border-primary-100 bg-primary-50 px-8 py-10 shadow-xl shadow-primary-500/5 animate-fade-in-down">
+                    <form onSubmit={handleEnroll} className="space-y-8">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="h-10 w-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
+                                <Plus size={20} />
+                            </div>
+                            <h2 className="text-xl font-black text-college-navy italic">Primary Authorization Data</h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Legal Name</label>
+                                <input
+                                    type="text" required
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    className="w-full rounded-2xl border-2 border-white bg-white/50 p-4 text-sm font-bold focus:border-primary-500 outline-none transition-all"
+                                    placeholder="Enter full name"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Institutional Email</label>
+                                <input
+                                    type="email" required
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full rounded-2xl border-2 border-white bg-white/50 p-4 text-sm font-bold focus:border-primary-500 outline-none transition-all"
+                                    placeholder="gokul@campus.edu"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Access Tier</label>
+                                <select
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                    className="w-full rounded-2xl border-2 border-white bg-white/50 p-4 text-sm font-bold focus:border-primary-500 outline-none cursor-pointer"
+                                >
+                                    <option value="STUDENT">Student (End-User)</option>
+                                    <option value="STAFF">Faculty (Supervisor)</option>
+                                    <option value="LAB_INCHARGE">Lab Manager (Admin Unit)</option>
+                                    <option value="ADMIN">System Admin (Root)</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Department</label>
+                                <input
+                                    type="text" required
+                                    value={formData.department}
+                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                    className="w-full rounded-2xl border-2 border-white bg-white/50 p-4 text-sm font-bold focus:border-primary-500 outline-none"
+                                    placeholder="CSE / ECE / IT"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Identifier (Roll/Emp ID)</label>
+                                <input
+                                    type="text" required
+                                    value={formData.role === 'STUDENT' ? formData.roll_number : formData.employee_id}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        roll_number: formData.role === 'STUDENT' ? e.target.value : '',
+                                        employee_id: formData.role !== 'STUDENT' ? e.target.value : ''
+                                    })}
+                                    className="w-full rounded-2xl border-2 border-white bg-white/50 p-4 text-sm font-bold focus:border-primary-500 outline-none"
+                                    placeholder="Unique ID"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Default Key</label>
+                                <input
+                                    type="text" readOnly
+                                    value={formData.password}
+                                    className="w-full rounded-2xl border-2 border-white bg-slate-100 p-4 text-sm font-bold text-slate-400"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4">
+                            <button
+                                type="submit"
+                                className="flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-10 py-4 text-sm font-black text-white hover:bg-primary-700 shadow-xl shadow-primary-600/20 transition-all active:scale-95"
+                            >
+                                <Check size={18} /> Process Initialization
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             <div className="rounded-[2.5rem] border border-slate-100 bg-white shadow-sm overflow-hidden">
                 <div className="border-b border-slate-50 bg-slate-50/30 p-6 sm:p-8">
@@ -66,7 +199,7 @@ export const UserManagement: React.FC = () => {
                             <Loader2 className="h-12 w-12 animate-spin text-primary-600 mb-4" />
                             <p className="text-slate-400 font-bold italic uppercase tracking-widest text-xs">Accessing Identity Vault...</p>
                         </div>
-                    ) : error ? (
+                    ) : error && !isAddingUser ? (
                         <div className="py-24 text-center">
                             <AlertCircle className="mx-auto h-12 w-12 text-rose-500 mb-4" />
                             <p className="text-rose-600 font-bold">{error}</p>
@@ -104,8 +237,8 @@ export const UserManagement: React.FC = () => {
                                         </td>
                                         <td className="whitespace-nowrap px-8 py-6">
                                             <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] border ${user.status === 'ACTIVE'
-                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                    : 'bg-rose-50 text-rose-700 border-rose-100'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                : 'bg-rose-50 text-rose-700 border-rose-100'
                                                 }`}>
                                                 <div className={`mr-2 h-1 w-1 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                                                 {user.status === 'ACTIVE' ? 'Authorized' : 'Deactivated'}

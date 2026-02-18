@@ -24,5 +24,9 @@ export const userService = {
 
     getStudentStats: async (): Promise<{ upcoming: number, pending: number, completed: number }> => {
         return (await api.get('/users/student_stats/')).data;
+    },
+
+    enroll: async (data: any): Promise<User> => {
+        return (await api.post<User>('/users/signup/', data)).data;
     }
 };
