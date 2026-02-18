@@ -5,23 +5,23 @@ CampusCore is a premium, high-performance web platform designed for modern educa
 ## 🚀 Key Features
 
 ### 🔐 Identity & Access Management (IAM)
-- **Administrative-Only Enrollment**: Strictly controlled user registration system. The public "Signup" entry has been decommissioned; only **System Administrators** can initialize new student and staff accounts via the **Identity Registry**.
-- **Brute-Force Mitigation**: Industrial-grade security that monitors login attempts. **3 consecutive failures** trigger an automatic **3-minute lockout** for the account.
+- **Administrative-Only Enrollment**: Strictly controlled user registration system. The public "Signup" entry has been decommissioned; only **System Administrators** can initialize new student and staff accounts via the **Identity Registry** to maintain institutional integrity.
+- **Brute-Force Mitigation**: Industrial-grade security that monitors login attempts. **3 consecutive failures** trigger an automatic **3-minute lockout** for the account. Locked users receive a specific "Security Protocol" advisory.
 - **Multi-Tier RBAC**: Granular role-based access control for Students, Faculty (Staff), Lab In-Charges, and System Administrators.
-- **Recovery Protocol**: Self-service "Lost Key" recovery via institutional email verification and OTP.
+- **Recovery Protocol**: Self-service "Lost Key" recovery via institutional email verification and OTP for all authorized personnel.
 
 ### 📅 Advanced Booking Ecosystem
-- **Temporal Enforcement (Session Caps)**: Optimized resource turnover logic:
-    - **Students**: Max **1-hour** sessions per booking.
-    - **Staff**: Max **4-hour** sessions for research and extended lectures.
+- **Temporal Enforcement (Session Caps)**: Optimized resource turnover logic to prevent monopolization:
+    - **Students**: Max **1-hour (60 min)** sessions per booking.
+    - **Staff**: Max **4-hour** sessions for research and extended academic activities.
 - **Algorithm-Driven Scheduling**: Intelligent conflict checking that blocks resources globally once a request is approved or pending.
-- **Faculty Consultation (Bridge)**: A unique direct-booking system where students can schedule meetings with staff using only their Employee ID—automatically linking to consultation spaces.
+- **Faculty Consultation (Bridge)**: A unique direct-booking system where students can schedule meetings with staff using only their Employee ID—automatically linking to faculty-assigned consultation spaces.
 - **Auto-Approval Intelligence**: Staff bookings for institutional resources are automatically granted clearance to eliminate administrative latency.
 
 ### 🛡️ Administrative Governance
 - **Global Master Schedule**: A central oversight dashboard for Admins to monitor and filter every resource allocation across the campus with multi-parameter refining.
 - **Registry Surveillance (Audit Logs)**: Comprehensive logging of every system operation—from login successes to resource modifications—for full transparency.
-- **Resource Lifecycle Management**: Dynamic control over Labs, Classrooms, and Equipment status (Active, Maintenance, Inactive).
+- **Identity Registry**: Simplified administrative portal for user distribution and account management.
 
 ## 🛠️ Technology Stack
 
@@ -33,7 +33,7 @@ CampusCore is a premium, high-performance web platform designed for modern educa
 
 ### Backend
 - **Framework**: Django REST Framework (DRF)
-- **Security**: SimpleJWT with JTI-based Session Tracking
+- **Security**: SimpleJWT with JTI-based Session Tracking & Brute-force Protection
 - **Database**: MySQL / SQLite (Development)
 - **Logging**: Custom Audit Logging Middleware
 
@@ -51,7 +51,7 @@ CAMPUS/
     │   ├── services/   # API Communication Layer
     │   ├── context/    # Auth & Multi-role Management
     │   └── layouts/    # Dashboard & Public Shells
-    └── public/         # Institutional Assets (Favicon, etc.)
+    └── public/         # Institutional Assets (Favicon, Logo)
 ```
 
 ## 🚥 Quick Start
@@ -80,7 +80,7 @@ npm run dev
 ```
 
 ## 🔒 Security Policy
-This system implements "Authorization Guard" which bypasses standard algorithmic constraints for priority requests, but requires formal validation from the administrative oversight committee for any manual overrides.
+This system implements "Authorization Guard" which bypasses standard algorithmic constraints for priority requests, but requires formal validation from the administrative oversight committee for any manual overrides. Brute-force protection is enforced at the entry-gate for all user tiers.
 
 ---
 *Developed with focus on Premium Aesthetics and Scalable Institutional Logic.*
