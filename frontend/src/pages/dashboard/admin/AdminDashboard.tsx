@@ -1,10 +1,39 @@
-import React, { useState } from 'react';
-import { ShieldCheck, Users, Calendar, AlertTriangle, ArrowRight, Settings, LayoutDashboard, Bell, Shield, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Users, Calendar, ArrowRight, Settings, LayoutDashboard, Shield, ArrowUpRight, Loader2 } from 'lucide-react';
 import { ApprovalPanel } from '../approvals/ApprovalPanel';
 import { MeetingScheduler } from './MeetingScheduler';
+import { userService } from '../../../services/userService';
 
 export const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'scheduler'>('overview');
+    const [stats, setStats] = useState({
+        total_users: 0,
+        active_bookings: 0,
+        pending_approvals: 0,
+        total_resources: 0
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await userService.getStats();
+                setStats(data);
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const statItems = [
+        { label: 'Total Scholars', val: stats.total_users.toLocaleString(), icon: Users, color: 'text-primary-600', bg: 'bg-primary-50' },
+        { label: 'Active Sessions', val: stats.active_bookings.toLocaleString(), icon: Calendar, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Pending Clearances', val: stats.pending_approvals.toLocaleString(), icon: ShieldCheck, color: 'text-college-gold', bg: 'bg-primary-50' },
+        { label: 'Total Assets', val: stats.total_resources.toLocaleString(), icon: Shield, color: 'text-rose-600', bg: 'bg-rose-50' },
+    ];
 
     return (
         <div className="space-y-8 animate-fade-in-up">
@@ -38,8 +67,8 @@ export const AdminDashboard: React.FC = () => {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-4 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab.id
-                                ? 'text-primary-600'
-                                : 'text-slate-400 hover:text-slate-600'
+                            ? 'text-primary-600'
+                            : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         <tab.icon size={16} />
@@ -56,36 +85,50 @@ export const AdminDashboard: React.FC = () => {
                 <div className="space-y-8">
                     {/* Analytics Grid */}
                     <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                        {[
-                            { label: 'Total Scholars', val: '1,248', icon: Users, color: 'text-primary-600', bg: 'bg-primary-50' },
-                            { label: 'Active Sessions', val: '14', icon: Calendar, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                            { label: 'Pending Clearances', val: '5', icon: ShieldCheck, color: 'text-college-gold', bg: 'bg-primary-50' },
-                            { label: 'System Conflicts', val: '0', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50' },
-                        ].map((stat, i) => (
-                            <div key={i} className="group relative rounded-3xl sm:rounded-[2rem] border border-slate-50 bg-white p-6 sm:p-8 shadow-sm transition-all hover:shadow-2xl hover:shadow-primary-500/5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className={`rounded-2xl ${stat.bg} p-3 sm:p-4 ${stat.color} transition-transform group-hover:scale-110`}>
-                                        <stat.icon size={20} />
-                                    </div>
-                                    <ArrowRight size={16} className="text-slate-200 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" />
+                        {isLoading ? (
+                            Array(4).fill(0).map((_, i) => (
+                                <div key={i} className="rounded-[2rem] border border-slate-50 bg-white p-8 flex items-center justify-center min-h-[160px]">
+                                    <Loader2 className="h-8 w-8 animate-spin text-slate-200" />
                                 </div>
-                                <div className="text-2xl sm:text-3xl font-black text-college-navy tracking-tight">{stat.val}</div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{stat.label}</div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            statItems.map((stat, i) => (
+                                <div key={i} className="group relative rounded-3xl sm:rounded-[2rem] border border-slate-50 bg-white p-6 sm:p-8 shadow-sm transition-all hover:shadow-2xl hover:shadow-primary-500/5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className={`rounded-2xl ${stat.bg} p-3 sm:p-4 ${stat.color} transition-transform group-hover:scale-110`}>
+                                            <stat.icon size={20} />
+                                        </div>
+                                        <ArrowRight size={16} className="text-slate-200 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" />
+                                    </div>
+                                    <div className="text-2xl sm:text-3xl font-black text-college-navy tracking-tight">{stat.val}</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">{stat.label}</div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     <div className="grid gap-8 lg:grid-cols-3">
                         <div className="lg:col-span-2 space-y-8">
-                            {/* Operational Logs Placeholder */}
                             <div className="rounded-[2rem] sm:rounded-[3rem] border border-slate-100 bg-white p-6 sm:p-10 shadow-sm">
                                 <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <h2 className="text-xl sm:text-2xl font-black text-college-navy italic leading-none">System Audit Logs</h2>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-600 cursor-pointer hover:underline">Export Report</span>
+                                    <h2 className="text-xl sm:text-2xl font-black text-college-navy italic leading-none">System Operational Pulse</h2>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-600">Live Telemetry</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-slate-300">
-                                    <ShieldCheck size={48} className="opacity-20 mb-4" />
-                                    <p className="font-bold italic text-xs sm:text-sm text-center px-4">No protocol violations or critical logs recorded in the current epoch.</p>
+                                <div className="space-y-4">
+                                    <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-sm font-bold text-college-navy">API Gateway Status: Operational</span>
+                                        </div>
+                                        <span className="text-[10px] font-black text-emerald-600">99.9% Uptime</span>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-sm font-bold text-college-navy">Institutional DB Sync: Synchronized</span>
+                                        </div>
+                                        <span className="text-[10px] font-black text-emerald-600">Locked</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -94,11 +137,11 @@ export const AdminDashboard: React.FC = () => {
                             <h2 className="text-lg sm:text-xl font-bold text-college-navy mb-6 sm:mb-8 italic">Administrative Tools</h2>
                             <div className="space-y-4">
                                 {[
-                                    { title: 'User Access Control', desc: 'Manage roles & permissions', icon: Shield },
-                                    { title: 'System Configuration', desc: 'Portal & API settings', icon: Settings },
-                                    { title: 'Notification Center', desc: 'Broadcast announcements', icon: Bell },
+                                    { title: 'User Access Control', desc: 'Manage roles & permissions', icon: Shield, link: '/dashboard/admin/users' },
+                                    { title: 'Asset Inventory', desc: 'Resource orchestration', icon: Settings, link: '/dashboard/admin/resources' },
+                                    { title: 'Security Audits', desc: 'Immutable log stream', icon: ShieldCheck, link: '/dashboard/admin/audit' },
                                 ].map((tool, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-600/5 transition-all cursor-pointer group">
+                                    <a key={i} href={tool.link} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-600/5 transition-all cursor-pointer group">
                                         <div className="flex items-center gap-3 sm:gap-4">
                                             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
                                                 <tool.icon size={18} />
@@ -109,7 +152,7 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary-500 transition-colors" />
-                                    </div>
+                                    </a>
                                 ))}
                             </div>
                         </div>
@@ -131,3 +174,4 @@ export const AdminDashboard: React.FC = () => {
         </div>
     );
 };
+

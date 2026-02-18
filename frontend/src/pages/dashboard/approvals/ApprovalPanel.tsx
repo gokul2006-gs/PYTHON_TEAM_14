@@ -88,6 +88,20 @@ export const ApprovalPanel: React.FC = () => {
                                             <div className="min-w-0">
                                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Requester</div>
                                                 <div className="text-sm font-bold text-college-navy truncate">{request.user_name}</div>
+                                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate">
+                                                    {request.user_role} • {request.user_dept || 'General'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                                                <ShieldCheck size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">ID Reference</div>
+                                                <div className="text-sm font-bold text-college-navy truncate">
+                                                    {request.user_id_ref}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">

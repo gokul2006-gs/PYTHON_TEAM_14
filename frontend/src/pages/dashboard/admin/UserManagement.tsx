@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
-import { User, Shield, Search, MoreVertical } from 'lucide-react';
-
-// Mock User Data
-const MOCK_USERS = [
-    { id: '1', name: 'John Doe', email: 'john@student.campus.edu', role: 'student', status: 'active' },
-    { id: '2', name: 'Jane Smith', email: 'jane@student.campus.edu', role: 'student', status: 'active' },
-    { id: '3', name: 'Dr. Alan Grant', email: 'alan@faculty.campus.edu', role: 'faculty', status: 'active' },
-    { id: '4', name: 'Lab Tech Sarah', email: 'sarah@lab.campus.edu', role: 'lab_in_charge', status: 'active' },
-    { id: '5', name: 'Admin User', email: 'admin@campus.edu', role: 'admin', status: 'active' },
-];
+import React, { useState, useEffect } from 'react';
+import { User as UserIcon, Shield, Search, MoreVertical, Loader2, AlertCircle } from 'lucide-react';
+import { userService, type User } from '../../../services/userService';
 
 export const UserManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [users] = useState(MOCK_USERS);
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await userService.getAll();
+            setUsers(data);
+        } catch (err) {
+            console.error('Failed to fetch users:', err);
+            setError('Failed to synchronize identity registry. Please verify connection.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
     const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -26,8 +38,11 @@ export const UserManagement: React.FC = () => {
                     <h1 className="text-3xl font-black text-college-navy tracking-tight italic leading-tight">Identity Registry</h1>
                     <p className="text-slate-500 font-medium italic mt-1 text-sm sm:text-base">Manage institutional user access and authorization protocols.</p>
                 </div>
-                <button className="btn-premium flex items-center justify-center gap-2 py-3 px-6 shadow-lg shadow-college-navy/10 active:scale-95 transition-all">
-                    Register User <User size={18} />
+                <button
+                    onClick={fetchUsers}
+                    className="btn-premium flex items-center justify-center gap-2 py-3 px-6 shadow-lg shadow-college-navy/10 active:scale-95 transition-all"
+                >
+                    Refresh Registry <UserIcon size={18} />
                 </button>
             </div>
 
@@ -46,53 +61,69 @@ export const UserManagement: React.FC = () => {
                 </div>
 
                 <div className="overflow-x-auto no-scrollbar">
-                    <table className="min-w-full divide-y divide-slate-50">
-                        <thead className="bg-slate-50/50">
-                            <tr>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">User Identity</th>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Clearance Role</th>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Protocol Status</th>
-                                <th scope="col" className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Operations</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 bg-white">
-                            {filteredUsers.map((user) => (
-                                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="whitespace-nowrap px-8 py-6">
-                                        <div className="flex items-center">
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 font-black text-lg border-2 border-white shadow-md group-hover:scale-110 transition-transform">
-                                                {user.name.charAt(0)}
-                                            </div>
-                                            <div className="ml-4">
-                                                <div className="text-sm font-black text-college-navy italic">{user.name}</div>
-                                                <div className="text-xs font-medium text-slate-400">{user.email}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="whitespace-nowrap px-8 py-6">
-                                        <div className="flex items-center text-xs font-black text-slate-600 uppercase tracking-widest bg-slate-100/50 py-1.5 px-3 rounded-lg w-fit">
-                                            <Shield size={12} className="mr-2 text-primary-500" />
-                                            {user.role.replace(/_/g, ' ')}
-                                        </div>
-                                    </td>
-                                    <td className="whitespace-nowrap px-8 py-6">
-                                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700 border border-emerald-100">
-                                            <div className="mr-2 h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                                            Authorized
-                                        </span>
-                                    </td>
-                                    <td className="whitespace-nowrap px-8 py-6 text-right">
-                                        <button className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-college-navy transition-all">
-                                            <MoreVertical size={18} />
-                                        </button>
-                                    </td>
+                    {isLoading ? (
+                        <div className="py-24 flex flex-col items-center justify-center">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary-600 mb-4" />
+                            <p className="text-slate-400 font-bold italic uppercase tracking-widest text-xs">Accessing Identity Vault...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="py-24 text-center">
+                            <AlertCircle className="mx-auto h-12 w-12 text-rose-500 mb-4" />
+                            <p className="text-rose-600 font-bold">{error}</p>
+                            <button onClick={fetchUsers} className="mt-4 text-sm font-black text-primary-600 uppercase hover:underline">Retry Connection</button>
+                        </div>
+                    ) : (
+                        <table className="min-w-full divide-y divide-slate-50">
+                            <thead className="bg-slate-50/50">
+                                <tr>
+                                    <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">User Identity</th>
+                                    <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Clearance Role</th>
+                                    <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Protocol Status</th>
+                                    <th scope="col" className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Operations</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 bg-white">
+                                {filteredUsers.map((user) => (
+                                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="whitespace-nowrap px-8 py-6">
+                                            <div className="flex items-center">
+                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 font-black text-lg border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+                                                    {user.username.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-sm font-black text-college-navy italic">{user.username}</div>
+                                                    <div className="text-xs font-medium text-slate-400">{user.email}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="whitespace-nowrap px-8 py-6">
+                                            <div className="flex items-center text-xs font-black text-slate-600 uppercase tracking-widest bg-slate-100/50 py-1.5 px-3 rounded-lg w-fit">
+                                                <Shield size={12} className="mr-2 text-primary-500" />
+                                                {user.role.replace(/_/g, ' ')}
+                                            </div>
+                                        </td>
+                                        <td className="whitespace-nowrap px-8 py-6">
+                                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] border ${user.status === 'ACTIVE'
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                    : 'bg-rose-50 text-rose-700 border-rose-100'
+                                                }`}>
+                                                <div className={`mr-2 h-1 w-1 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                                {user.status === 'ACTIVE' ? 'Authorized' : 'Deactivated'}
+                                            </span>
+                                        </td>
+                                        <td className="whitespace-nowrap px-8 py-6 text-right">
+                                            <button className="h-10 w-10 inline-flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-college-navy transition-all">
+                                                <MoreVertical size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
 
-                {filteredUsers.length === 0 && (
+                {!isLoading && !error && filteredUsers.length === 0 && (
                     <div className="py-24 text-center">
                         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-slate-50 text-slate-300">
                             <Search size={32} />
@@ -105,3 +136,4 @@ export const UserManagement: React.FC = () => {
         </div>
     );
 };
+

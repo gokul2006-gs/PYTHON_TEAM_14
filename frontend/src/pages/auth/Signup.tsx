@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { signupSchema, type SignupFormData } from '../../utils/validation';
 import { authService } from '../../services/authService';
-import { AlertCircle, Loader2, ArrowRight, User, Mail, Phone, Lock, GraduationCap, Briefcase, UserCircle2 } from 'lucide-react';
+import { AlertCircle, Loader2, ArrowRight, User, Mail, Phone, Lock, GraduationCap, Briefcase, UserCircle2, Cpu } from 'lucide-react';
 
 export const Signup: React.FC = () => {
     const navigate = useNavigate();
@@ -110,6 +110,65 @@ export const Signup: React.FC = () => {
                         </div>
                         {errors.email && <p className="text-xs font-bold text-red-600 px-1">{errors.email.message}</p>}
                     </div>
+                </div>
+
+                {/* Role Specific Fields */}
+                <div className="animate-fade-in-up space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Department / Branch</label>
+                        <div className="relative">
+                            <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                            <input
+                                {...register('department')}
+                                placeholder="Computer Science Engineering"
+                                className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    {selectedRole === 'STUDENT' && (
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Roll Number</label>
+                            <div className="relative">
+                                <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                <input
+                                    {...register('roll_number')}
+                                    placeholder="21CS001"
+                                    className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {(selectedRole === 'STAFF' || selectedRole === 'LAB_INCHARGE') && (
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                                    {selectedRole === 'STAFF' ? 'Designation' : 'Employee ID'}
+                                </label>
+                                <div className="relative">
+                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                    <input
+                                        {...register(selectedRole === 'STAFF' ? 'designation' : 'employee_id')}
+                                        placeholder={selectedRole === 'STAFF' ? 'Assistant Professor' : 'EMP123'}
+                                        className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                                    {selectedRole === 'STAFF' ? 'Lab Preference (Optional)' : 'Assigned Lab'}
+                                </label>
+                                <div className="relative">
+                                    <Cpu className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                    <input
+                                        placeholder={selectedRole === 'STAFF' ? 'Electronics Lab' : 'Computer Lab 01'}
+                                        className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-4 text-sm font-bold text-college-navy placeholder:text-slate-300 focus:border-primary-500 focus:ring-primary-500 outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-1.5">

@@ -4,6 +4,9 @@ export interface Booking {
     id: number;
     user: number;
     user_name: string;
+    user_role: string;
+    user_dept: string;
+    user_id_ref: string;
     resource: number;
     resource_name: string;
     booking_date: string; // YYYY-MM-DD

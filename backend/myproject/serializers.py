@@ -4,7 +4,10 @@ from .models import User, Resource, Booking, AuditLog, Notification, MeetingSche
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'role', 'status', 'created_at']
+        fields = [
+            'id', 'username', 'email', 'phone', 'role', 'status', 
+            'department', 'roll_number', 'employee_id', 'designation', 'created_at'
+        ]
         read_only_fields = ['id', 'created_at']
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -14,7 +17,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'phone', 'role', 'name', 'confirmPassword']
+        fields = [
+            'id', 'username', 'email', 'password', 'phone', 'role', 'name', 
+            'confirmPassword', 'department', 'roll_number', 'employee_id', 'designation'
+        ]
         extra_kwargs = {'username': {'required': False}} # We'll set it from name
     
     def create(self, validated_data):
@@ -25,7 +31,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         role = validated_data.get('role', 'STUDENT')
         is_staff = (role == 'ADMIN')
         
-        # Use 'email' as 'username' to ensure uniqueness (AbstractUser needs a unique username field)
+        # Use 'email' as 'username' to ensure uniqueness
         username = validated_data.get('email')
         
         user = User.objects.create_user(
@@ -33,9 +39,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=validated_data['password'],
             phone=validated_data.get('phone', ''),
-            first_name=validated_data.get('name', ''), # Save display name to first_name
+            first_name=validated_data.get('name', ''),
             role=role,
-            is_staff=is_staff
+            is_staff=is_staff,
+            department=validated_data.get('department'),
+            roll_number=validated_data.get('roll_number'),
+            employee_id=validated_data.get('employee_id'),
+            designation=validated_data.get('designation')
         )
         return user
 
@@ -49,12 +59,19 @@ class ResourceSerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')
+    user_role = serializers.ReadOnlyField(source='user.role')
+    user_dept = serializers.ReadOnlyField(source='user.department')
+    user_id_ref = serializers.SerializerMethodField()
     resource_name = serializers.ReadOnlyField(source='resource.name')
+
+    def get_user_id_ref(self, obj):
+        return obj.user.roll_number or obj.user.employee_id or "N/A"
     
     class Meta:
         model = Booking
         fields = [
-            'id', 'user', 'user_name', 'resource', 'resource_name', 
+            'id', 'user', 'user_name', 'user_role', 'user_dept', 'user_id_ref',
+            'resource', 'resource_name', 
             'booking_date', 'start_time', 'end_time', 
             'booking_type', 'justification', 'remarks', 
             'priority_level', 'status', 'created_at'

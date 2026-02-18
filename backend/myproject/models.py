@@ -23,6 +23,12 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     
+    # Role-specific fields
+    department = models.CharField(max_length=100, blank=True, null=True)
+    roll_number = models.CharField(max_length=50, blank=True, null=True)
+    employee_id = models.CharField(max_length=50, blank=True, null=True)
+    designation = models.CharField(max_length=100, blank=True, null=True)
+
     # Login Attempt Logic
     failed_login_attempts = models.PositiveIntegerField(default=0)
     last_failed_login_at = models.DateTimeField(null=True, blank=True)

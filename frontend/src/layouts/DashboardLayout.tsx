@@ -29,27 +29,27 @@ export const DashboardLayout: React.FC = () => {
 
     const getNavigation = (): SidebarItem[] => {
         switch (user?.role) {
-            case 'student':
+            case 'STUDENT':
                 return [
                     { name: 'Overview', href: '/dashboard/student', icon: LayoutDashboard },
                     { name: 'My Schedule', href: '/dashboard/student/bookings', icon: Calendar },
                     { name: 'Resource Hub', href: '/dashboard/student/resources', icon: BookOpen },
                 ];
-            case 'staff':
+            case 'STAFF':
                 return [
                     { name: 'Faculty Dashboard', href: '/dashboard/staff', icon: LayoutDashboard },
                     { name: 'Research Bookings', href: '/dashboard/staff/bookings', icon: Calendar },
                     { name: 'Department Assets', href: '/dashboard/staff/resources', icon: BookOpen },
                     { name: 'Approval Requests', href: '/dashboard/staff/approvals', icon: Shield },
                 ];
-            case 'lab_incharge':
+            case 'LAB_INCHARGE':
                 return [
                     { name: 'Center Overview', href: '/dashboard/lab-incharge', icon: LayoutDashboard },
                     { name: 'Lab Timeline', href: '/dashboard/lab-incharge/schedule', icon: Calendar },
                     { name: 'Pending Access', href: '/dashboard/lab-incharge/approvals', icon: FileText },
                     { name: 'Asset Management', href: '/dashboard/lab-incharge/resources', icon: Settings },
                 ];
-            case 'admin':
+            case 'ADMIN':
                 return [
                     { name: 'System Control', href: '/dashboard/admin', icon: LayoutDashboard },
                     { name: 'Global Bookings', href: '/dashboard/admin/bookings', icon: Calendar },

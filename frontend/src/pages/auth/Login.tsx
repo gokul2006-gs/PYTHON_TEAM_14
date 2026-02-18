@@ -6,7 +6,7 @@ import { AuthLayout } from '../../layouts/AuthLayout';
 import { loginSchema, type LoginFormData } from '../../utils/validation';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, Loader2, ArrowRight, UserCircle2, GraduationCap, ShieldCheck, Briefcase } from 'lucide-react';
+import { AlertCircle, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -14,8 +14,6 @@ export const Login: React.FC = () => {
     const { login } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'STAFF' | 'LAB_INCHARGE' | 'ADMIN'>('STUDENT');
-
     const successMessage = location.state?.message;
 
     const {
@@ -31,7 +29,7 @@ export const Login: React.FC = () => {
         setError(null);
         try {
             const response = await authService.login(data);
-            const user = { ...response.user, role: response.user.role.toLowerCase() as any };
+            const user = response.user;
             login(response.token, user);
 
             const role = user.role.toUpperCase();
@@ -64,28 +62,6 @@ export const Login: React.FC = () => {
             title="Institutional Access"
             subtitle="Secure gateway to the CampusCore ecosystem."
         >
-            {/* Role Switcher */}
-            <div className="mb-8 grid grid-cols-2 xs:grid-cols-4 gap-2 sm:gap-3">
-                {[
-                    { id: 'STUDENT', icon: GraduationCap },
-                    { id: 'STAFF', icon: UserCircle2 },
-                    { id: 'LAB_INCHARGE', icon: Briefcase },
-                    { id: 'ADMIN', icon: ShieldCheck },
-                ].map((role) => (
-                    <button
-                        key={role.id}
-                        type="button"
-                        onClick={() => setSelectedRole(role.id as any)}
-                        className={`flex flex-col items-center justify-center rounded-2xl border py-3.5 sm:py-4 transition-all ${selectedRole === role.id
-                            ? 'border-primary-500 bg-primary-50 text-primary-600 shadow-lg shadow-primary-500/10'
-                            : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                            }`}
-                    >
-                        <role.icon size={18} className="sm:w-5 sm:h-5" />
-                        <span className="mt-1.5 text-[7px] sm:text-[9px] font-black uppercase tracking-tighter sm:tracking-widest">{role.id.replace('_', ' ')}</span>
-                    </button>
-                ))}
-            </div>
 
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                 {successMessage && !error && (

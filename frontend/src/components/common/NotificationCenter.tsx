@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { notificationService, type Notification } from '../../services/notificationService';
-import { Bell, Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface NotificationCenterProps {
     isOpen: boolean;
@@ -29,12 +29,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
             <div className="max-h-96 overflow-y-auto">
                 {notifications.length > 0 ? (
                     notifications.map((notif) => (
-                        <div key={notif.id} className={`border-b border-slate-50 p-4 hover:bg-slate-50 ${notif.isRead ? 'opacity-70' : ''}`}>
+                        <div key={notif.id} className={`border-b border-slate-50 p-4 hover:bg-slate-50 ${notif.is_read ? 'opacity-70' : ''}`}>
                             <div className="flex gap-3">
-                                <div className={`mt-0.5 h-2 w-2 rounded-full ${notif.type === 'success' ? 'bg-green-500' : notif.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
+                                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
                                 <div>
-                                    <p className="text-sm font-medium text-slate-900">{notif.title}</p>
-                                    <p className="mt-1 text-xs text-slate-500">{notif.message}</p>
+                                    <p className="text-sm font-medium text-slate-900 leading-relaxed">{notif.message}</p>
+                                    <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(notif.created_at).toLocaleDateString()}</p>
                                 </div>
                             </div>
                         </div>

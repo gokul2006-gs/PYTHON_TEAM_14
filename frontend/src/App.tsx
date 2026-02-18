@@ -21,6 +21,7 @@ import { FacultyDashboard as FacultyDashboardPage } from './pages/dashboard/facu
 import { LabInChargeDashboard as LabInChargeDashboardPage } from './pages/dashboard/lab-in-charge/LabInChargeDashboard';
 import { AdminDashboard as AdminDashboardPage } from './pages/dashboard/admin/AdminDashboard';
 import { UserManagement } from './pages/dashboard/admin/UserManagement';
+import { ResourceManagement } from './pages/dashboard/admin/ResourceManagement';
 import { AuditLogs } from './pages/dashboard/admin/AuditLogs';
 
 const App: React.FC = () => {
@@ -52,28 +53,28 @@ const App: React.FC = () => {
           <Route path="/dashboard/:role/bookings" element={<MyBookings />} />
 
           {/* Role-based Routes */}
-          <Route element={<RequireRole allowedRoles={['student']} />}>
+          <Route element={<RequireRole allowedRoles={['STUDENT']} />}>
             <Route path="/dashboard/student" element={<StudentDashboardPage />} />
           </Route>
 
-          <Route element={<RequireRole allowedRoles={['staff']} />}>
+          <Route element={<RequireRole allowedRoles={['STAFF']} />}>
             <Route path="/dashboard/staff" element={<FacultyDashboardPage />} />
             <Route path="/dashboard/staff/approvals" element={<ApprovalPanel />} />
           </Route>
 
-          <Route element={<RequireRole allowedRoles={['lab_incharge']} />}>
+          <Route element={<RequireRole allowedRoles={['LAB_INCHARGE']} />}>
             <Route path="/dashboard/lab-incharge" element={<LabInChargeDashboardPage />} />
             <Route path="/dashboard/lab-incharge/approvals" element={<ApprovalPanel />} />
             <Route path="/dashboard/lab-incharge/schedule" element={<div>Lab Schedule Placeholder</div>} />
-            <Route path="/dashboard/lab-incharge/resources" element={<div>Manage Resources Placeholder</div>} />
+            <Route path="/dashboard/lab-incharge/resources" element={<ResourceManagement />} />
           </Route>
 
-          <Route element={<RequireRole allowedRoles={['admin']} />}>
+          <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
             <Route path="/dashboard/admin" element={<AdminDashboardPage />} />
             <Route path="/dashboard/admin/approvals" element={<ApprovalPanel />} />
             <Route path="/dashboard/admin/bookings" element={<div>All Bookings Admin View</div>} />
             <Route path="/dashboard/admin/users" element={<UserManagement />} />
-            <Route path="/dashboard/admin/resources" element={<div>Resource Management Placeholder</div>} />
+            <Route path="/dashboard/admin/resources" element={<ResourceManagement />} />
             <Route path="/dashboard/admin/audit" element={<AuditLogs />} />
           </Route>
 

@@ -14,15 +14,64 @@ from .serializers import (
     MeetingScheduleSerializer
 )
 
+class IsAdminRole(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role == 'ADMIN')
+
+class IsAdminOrLabInCharge(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'LAB_INCHARGE'])
+
+class IsStaffOrAbove(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'LAB_INCHARGE', 'STAFF'])
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+
+    def get_permissions(self):
+        if self.action == 'signup':
+            return [permissions.AllowAny()]
+        if self.action == 'student_stats':
+            return [permissions.IsAuthenticated()]
+        if self.action == 'list':
+            return [IsStaffOrAbove()]
+        return [IsAdminRole()]
 
     def perform_destroy(self, instance):
         instance.status = 'INACTIVE'
         instance.save()
         AuditLog.objects.create(user=self.request.user, action="USER_DEACTIVATED", details=f"Deactivated user {instance.username}")
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def student_stats(self, request):
+        from .models import Booking
+        user = request.user
+        upcoming = Booking.objects.filter(user=user, status='APPROVED', booking_date__gte=timezone.now().date()).count()
+        pending = Booking.objects.filter(user=user, status='PENDING').count()
+        completed = Booking.objects.filter(user=user, status='APPROVED', booking_date__lt=timezone.now().date()).count()
+        
+        return Response({
+            "upcoming": upcoming,
+            "pending": pending,
+            "completed": completed
+        })
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminRole])
+    def dashboard_stats(self, request):
+        from .models import Resource, Booking, AuditLog
+        total_users = User.objects.count()
+        active_bookings = Booking.objects.filter(status='APPROVED').count()
+        pending_approvals = Booking.objects.filter(status='PENDING').count()
+        total_resources = Resource.objects.count()
+        
+        return Response({
+            "total_users": total_users,
+            "active_bookings": active_bookings,
+            "pending_approvals": pending_approvals,
+            "total_resources": total_resources
+        })
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
     def signup(self, request):
@@ -96,7 +145,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
+            return [IsAdminOrLabInCharge()]
         return [permissions.IsAuthenticated()]
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -146,13 +195,20 @@ class BookingViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         booking = serializer.save(user=user, priority_level=priority, status='PENDING')
         
-        # Notify relevant authority
-        approver = None
-        if resource.type == 'LAB': approver = resource.lab_in_charge
-        elif booking_type == 'MEETING': approver = resource.assigned_staff
-        # Others go to Admin (HOD) - implied by panel visibility
-
         AuditLog.objects.create(user=user, action="REQUEST_CREATED", details=f"Request {booking.id} pending review.")
+        
+        # Determine Approver Notification
+        notification_msg = f"New Request: {user.username} is requesting access to {resource.name} on {booking_date}."
+        if resource.type == 'LAB' and resource.lab_in_charge:
+            Notification.objects.create(user=resource.lab_in_charge, message=notification_msg)
+        elif booking_type == 'MEETING' and resource.assigned_staff:
+            Notification.objects.create(user=resource.assigned_staff, message=notification_msg)
+        else:
+            # Notify all Admins for general resource/special requests
+            admins = User.objects.filter(role='ADMIN')
+            for admin in admins:
+                Notification.objects.create(user=admin, message=notification_msg)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
@@ -210,6 +266,22 @@ class BookingViewSet(viewsets.ModelViewSet):
         Notification.objects.create(user=booking.user, message=f"Access to {booking.resource.name} DENIED: {reason}")
         return Response({"status": "rejected"})
 
+    @action(detail=False, methods=['get'])
+    def availability(self, request):
+        resource_id = request.query_params.get('resource')
+        date = request.query_params.get('date')
+        if not resource_id or not date:
+            return Response({"error": "Resource and date are required"}, status=400)
+        
+        # Consider both APPROVED and PENDING as occupied to prevent overlaps
+        bookings = Booking.objects.filter(
+            resource_id=resource_id,
+            booking_date=date,
+            status__in=['APPROVED', 'PENDING']
+        ).values('start_time', 'end_time')
+        
+        return Response(list(bookings))
+
 class MeetingScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = MeetingScheduleSerializer
     queryset = MeetingSchedule.objects.all()
@@ -231,7 +303,7 @@ class MeetingScheduleViewSet(viewsets.ModelViewSet):
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdminRole]
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
