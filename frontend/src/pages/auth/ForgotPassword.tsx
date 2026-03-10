@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Loader2 } from 'lucide-react';
 
+import api from '../../lib/axios';
+
 const forgotPasswordSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
 });
@@ -26,12 +28,16 @@ export const ForgotPassword: React.FC = () => {
 
     const onSubmit = async (data: ForgotPasswordFormData) => {
         setIsLoading(true);
-        // Simulate backend call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        // Always show success message for security (don't reveal if email exists)
-        setIsSubmitted(true);
-        setIsLoading(false);
-        console.log('Reset requested for:', data.email);
+        try {
+            await api.post('/auth/password-reset/', data);
+            setIsSubmitted(true);
+        } catch (error) {
+            console.error('Reset request failed:', error);
+            // Still show success for security purposes
+            setIsSubmitted(true);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

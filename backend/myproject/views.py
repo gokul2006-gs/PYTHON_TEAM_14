@@ -13,6 +13,11 @@ from .serializers import (
     AuditLogSerializer, NotificationSerializer, RegisterSerializer,
     MeetingScheduleSerializer
 )
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 class IsAdminRole(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -366,3 +371,56 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def mark_all_read(self, request):
         Notification.objects.filter(user=request.user).update(is_read=True)
         return Response({"status": "success"})
+
+class PasswordResetRequestView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # For security, don't reveal if user exists
+            return Response({"message": "If an account exists, a reset link has been sent."}, status=status.HTTP_200_OK)
+
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        from django.conf import settings
+        # Use frontend URL from settings
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
+        
+        subject = "Campus Resource Portal - Password Reset"
+        message = f"Hello {user.username},\n\nYou requested a password reset. Click the link below to set a new password:\n\n{reset_link}\n\nIf you didn't request this, please ignore this email."
+        
+        send_mail(subject, message, None, [email])
+        
+        return Response({"message": "If an account exists, a reset link has been sent."}, status=status.HTTP_200_OK)
+
+class PasswordResetConfirmView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request):
+        uidb64 = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('password')
+
+        if not all([uidb64, token, new_password]):
+            return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"error": "Invalid reset link"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            AuditLog.objects.create(user=user, action="PASSWORD_RESET_SUCCESS", details="Password reset via email token.")
+            return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)

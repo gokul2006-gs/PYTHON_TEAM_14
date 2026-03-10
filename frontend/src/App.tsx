@@ -25,6 +25,7 @@ import { UserManagement } from './pages/dashboard/admin/UserManagement';
 import { ResourceManagement } from './pages/dashboard/admin/ResourceManagement';
 import { AuditLogs } from './pages/dashboard/admin/AuditLogs';
 import { AllBookings } from './pages/dashboard/admin/AllBookings';
+import { LabSchedule } from './pages/dashboard/lab-incharge/LabSchedule';
 
 const App: React.FC = () => {
   return (
@@ -68,7 +69,7 @@ const App: React.FC = () => {
           <Route element={<RequireRole allowedRoles={['LAB_INCHARGE']} />}>
             <Route path="/dashboard/lab-incharge" element={<LabInChargeDashboardPage />} />
             <Route path="/dashboard/lab-incharge/approvals" element={<ApprovalPanel />} />
-            <Route path="/dashboard/lab-incharge/schedule" element={<div>Lab Schedule Placeholder</div>} />
+            <Route path="/dashboard/lab-incharge/schedule" element={<LabSchedule />} />
             <Route path="/dashboard/lab-incharge/resources" element={<ResourceManagement />} />
           </Route>
 

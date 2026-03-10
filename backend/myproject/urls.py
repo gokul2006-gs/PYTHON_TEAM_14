@@ -8,7 +8,9 @@ from .views import (
     AuditLogViewSet, 
     NotificationViewSet,
     UserViewSet,
-    MeetingScheduleViewSet
+    MeetingScheduleViewSet,
+    PasswordResetRequestView,
+    PasswordResetConfirmView
 )
 
 router = DefaultRouter()
@@ -18,6 +20,8 @@ router.register(r'bookings', BookingViewSet)
 router.register(r'meetings', MeetingScheduleViewSet)
 router.register(r'audit', AuditLogViewSet)
 router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'auth/password-reset', PasswordResetRequestView, basename='password-reset-request')
+router.register(r'auth/password-reset-confirm', PasswordResetConfirmView, basename='password-reset-confirm')
 
 from django.http import JsonResponse
 

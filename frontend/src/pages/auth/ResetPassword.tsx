@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Loader2 } from 'lucide-react';
 
+import api from '../../lib/axios';
+
 const resetPasswordSchema = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
@@ -30,11 +32,25 @@ export const ResetPassword: React.FC = () => {
 
     const onSubmit = async (data: ResetPasswordFormData) => {
         setIsLoading(true);
-        // Simulate backend call with token from URL
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        console.log('Password reset to:', data.password);
-        navigate('/login', { state: { message: 'Password reset successfully. Please login with your new password.' } });
+        const params = new URLSearchParams(window.location.search);
+        const uid = params.get('uid');
+        const token = params.get('token');
+
+        try {
+            await api.post('/auth/password-reset-confirm/', {
+                uid,
+                token,
+                password: data.password
+            });
+            
+            navigate('/login', { state: { message: 'Password reset successfully. Please login with your new password.' } });
+        } catch (error: any) {
+            console.error('Reset failed:', error);
+            const message = error.response?.data?.error || 'Reset failed. link may have expired.';
+            alert(message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
